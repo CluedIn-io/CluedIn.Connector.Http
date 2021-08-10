@@ -11,14 +11,14 @@ using Newtonsoft.Json;
 
 namespace CluedIn.Connector.Http
 {
-    public class SqlServerConnectorProvider : ProviderBase, IExtendedProviderMetadata
+    public class HttpConnectorProvider : ProviderBase, IExtendedProviderMetadata
     {
         /**********************************************************************************************************
          * CONSTRUCTORS
          **********************************************************************************************************/
 
-        public SqlServerConnectorProvider([NotNull] ApplicationContext appContext)
-            : base(appContext, SqlServerConstants.CreateProviderMetadata())
+        public HttpConnectorProvider([NotNull] ApplicationContext appContext)
+            : base(appContext, HttpConstants.CreateProviderMetadata())
         {
            
         }
@@ -37,7 +37,7 @@ namespace CluedIn.Connector.Http
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
 
-            var result = new SqlServerConnectorJobData(configuration);
+            var result = new HttpConnectorJobData(configuration);
 
             return await Task.FromResult(result);
         }
@@ -67,12 +67,12 @@ namespace CluedIn.Connector.Http
             if (jobData == null)
                 throw new ArgumentNullException(nameof(jobData));
 
-            if (jobData is SqlServerConnectorJobData result)
+            if (jobData is HttpConnectorJobData result)
             {
                 return Task.FromResult(result.ToDictionary());
             }
 
-            throw new InvalidOperationException($"Unexpected data type for SqlServerConnectorJobData, {jobData.GetType()}");
+            throw new InvalidOperationException($"Unexpected data type for HttpConnectorJobData, {jobData.GetType()}");
         }
 
         public override Task<IDictionary<string, object>> GetHelperConfiguration(
@@ -93,13 +93,13 @@ namespace CluedIn.Connector.Http
                 throw new ArgumentNullException(nameof(jobData));
             }
 
-            if (!(jobData is SqlServerConnectorJobData result))
+            if (!(jobData is HttpConnectorJobData result))
             {
                 throw new ArgumentException(
                     "Wrong CrawlJobData type", nameof(jobData));
             }
 
-            var accountId = $"{result.Host}.{result.DatabaseName}";
+            var accountId = $"{result.Url}.{result.Authorization}";
 
             return Task.FromResult(new AccountInformation(accountId, $"{accountId}"));
         }
@@ -149,22 +149,22 @@ namespace CluedIn.Connector.Http
             return Task.FromResult(new CrawlLimit(-1, TimeSpan.Zero));
         }
 
-        public string Icon => SqlServerConstants.IconResourceName;
-        public string Domain { get; } = SqlServerConstants.Uri;
-        public string About { get; } = SqlServerConstants.ConnectorDescription;
-        public AuthMethods AuthMethods => SqlServerConstants.AuthMethods;
-        public IEnumerable<Control> Properties { get; } = SqlServerConstants.Properties;
-        public string ServiceType { get; } = JsonConvert.SerializeObject(SqlServerConstants.ServiceType);
-        public string Aliases { get; } = JsonConvert.SerializeObject(SqlServerConstants.Aliases);
+        public string Icon => HttpConstants.IconResourceName;
+        public string Domain { get; } = HttpConstants.Uri;
+        public string About { get; } = HttpConstants.ConnectorDescription;
+        public AuthMethods AuthMethods => HttpConstants.AuthMethods;
+        public IEnumerable<Control> Properties { get; } = HttpConstants.Properties;
+        public string ServiceType { get; } = JsonConvert.SerializeObject(HttpConstants.ServiceType);
+        public string Aliases { get; } = JsonConvert.SerializeObject(HttpConstants.Aliases);
         public Guide Guide { get; set; } = new Guide {
-            Instructions = SqlServerConstants.Instructions,
-            Value = new List<string> { SqlServerConstants.ConnectorDescription },
-            Details = SqlServerConstants.Details
+            Instructions = HttpConstants.Instructions,
+            Value = new List<string> { HttpConstants.ConnectorDescription },
+            Details = HttpConstants.Details
 
         };
 
-        public string Details { get; set; } = SqlServerConstants.Details;
-        public string Category { get; set; } = SqlServerConstants.Category;
-        public new IntegrationType Type { get; set; } = SqlServerConstants.Type;
+        public string Details { get; set; } = HttpConstants.Details;
+        public string Category { get; set; } = HttpConstants.Category;
+        public new IntegrationType Type { get; set; } = HttpConstants.Type;
     }
 }

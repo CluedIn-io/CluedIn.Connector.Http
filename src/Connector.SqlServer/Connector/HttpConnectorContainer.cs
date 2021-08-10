@@ -2,7 +2,7 @@
 
 namespace CluedIn.Connector.Http.Connector
 {
-    public class SqlServerConnectorContainer : IConnectorContainer
+    public class HttpConnectorContainer : IConnectorContainer
     {
         public string Name { get; set; }
         public string Id { get; set; }

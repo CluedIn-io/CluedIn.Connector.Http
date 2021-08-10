@@ -9,22 +9,22 @@ using Microsoft.Extensions.Logging;
 
 namespace CluedIn.Connector.Http
 {
-    [Component(SqlServerConstants.ProviderName, "Providers", ComponentType.Service, ServerComponents.ProviderWebApi, Components.Server, Components.DataStores, Isolation = ComponentIsolation.NotIsolated)]
-    public sealed class SqlServerConnectorComponent : ServiceApplicationComponent<IServer>
+    [Component(HttpConstants.ProviderName, "Providers", ComponentType.Service, ServerComponents.ProviderWebApi, Components.Server, Components.DataStores, Isolation = ComponentIsolation.NotIsolated)]
+    public sealed class HttpConnectorComponent : ServiceApplicationComponent<IServer>
     {
         /**********************************************************************************************************
          * CONSTRUCTOR
          **********************************************************************************************************/
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SqlServerConnectorComponent" /> class.
+        /// Initializes a new instance of the <see cref="HttpConnectorComponent" /> class.
         /// </summary>
         /// <param name="componentInfo">The component information.</param>
-        public SqlServerConnectorComponent(ComponentInfo componentInfo) : base(componentInfo)
+        public HttpConnectorComponent(ComponentInfo componentInfo) : base(componentInfo)
         {
             // Dev. Note: Potential for compiler warning here ... CA2214: Do not call overridable methods in constructors
             //   this class has been sealed to prevent the CA2214 waring being raised by the compiler
-            Container.Register(Component.For<SqlServerConnectorComponent>().Instance(this));
+            Container.Register(Component.For<HttpConnectorComponent>().Instance(this));
 
             //Container.Register(Component.For<ISqlClient>().ImplementedBy<SqlClient>().OnlyNewServices());
         }
@@ -43,10 +43,10 @@ namespace CluedIn.Connector.Http
             Container.Register(Types.FromAssembly(asm).BasedOn<IProvider>().WithServiceFromInterface().If(t => !t.IsAbstract).LifestyleSingleton());
             Container.Register(Types.FromAssembly(asm).BasedOn<IEntityActionBuilder>().WithServiceFromInterface().If(t => !t.IsAbstract).LifestyleSingleton());
 
-            Container.Register(Component.For<ISqlClient>().ImplementedBy<SqlClient>().OnlyNewServices());
+            Container.Register(Component.For<IHttpClient>().ImplementedBy<HttpPostClient>().OnlyNewServices());
 
 
-            this.Log.LogInformation("SqlClient Registered");
+            this.Log.LogInformation("Http Connector Registered");
             State = ServiceState.Started;
         }
 

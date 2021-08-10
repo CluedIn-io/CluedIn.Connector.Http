@@ -46,6 +46,7 @@
     <PackageReference Update="RestSharp" Version="106.10.1" />
     <PackageReference Update="Dapper" Version="2.0.35" />
     <PackageReference Update="Dapper.SqlBuilder" Version="2.0.35" />
+    <PackageReference Update="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
 
   </ItemGroup>
 
