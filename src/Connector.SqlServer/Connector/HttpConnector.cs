@@ -128,7 +128,11 @@ namespace CluedIn.Connector.Http.Connector
                             var json = new JObject();
                             foreach (var kp in data)
                             {
-                                json.Add(kp.Key, kp.Value.ToString());
+                                if (kp.Value != null)
+                                {
+                                    if (kp.Value.ToString() != string.Empty)
+                                        json.Add(kp.Key, kp.Value.ToString());
+                                }
                             }
 
                             using (var textWriter = new StreamWriter(stream))
