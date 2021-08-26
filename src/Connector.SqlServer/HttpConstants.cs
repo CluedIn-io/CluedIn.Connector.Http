@@ -29,7 +29,7 @@ namespace CluedIn.Connector.Http
 
         public static IList<string> ServiceType = new List<string> { "Connector" };
         public static IList<string> Aliases = new List<string> { "HttpConnector" };
-        public const string IconResourceName = "Resources.http.png";
+        public const string IconResourceName = "Resources.HTTP_logo.svg";
         public const string Instructions = "Provide authentication instructions here, if applicable";
         public const IntegrationType Type = IntegrationType.Connector;
         public const string Category = "Connectivity";

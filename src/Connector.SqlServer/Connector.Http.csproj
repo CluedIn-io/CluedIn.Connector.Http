@@ -6,10 +6,10 @@
     <IsCluedInServerComponent>true</IsCluedInServerComponent>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Resources\http.png" />
+    <None Remove="Resources\HTTP_logo.svg" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\http.png" />
+    <EmbeddedResource Include="Resources\HTTP_logo.svg" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CluedIn.Core" />
