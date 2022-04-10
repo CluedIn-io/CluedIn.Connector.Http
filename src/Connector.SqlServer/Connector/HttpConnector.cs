@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -11,10 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Core;
 using CluedIn.Core.Connectors;
-using CluedIn.Core.Data.Vocabularies;
 using CluedIn.Core.DataStore;
 using CluedIn.Core.Processing;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
@@ -24,6 +19,7 @@ namespace CluedIn.Connector.Http.Connector
     public class HttpConnector : ConnectorBase
     {
         private readonly ILogger<HttpConnector> _logger;
+        
         private readonly IHttpClient _client;
 
         public HttpConnector(IConfigurationRepository repo, ILogger<HttpConnector> logger, IHttpClient client) : base(repo)
@@ -106,54 +102,41 @@ namespace CluedIn.Connector.Http.Connector
             {
                 await ActionExtensions.ExecuteWithRetry(async () =>
                 {
-                    var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+                    var config = await base
+                        .GetAuthenticationDetails(
+                            executionContext, providerDefinitionId);
+                    var httpClient = GetHttpClient(config);
+                    var json = GetJsonFromData(data);
+                    var request = GetRequest(config, json);
 
-                    using (var client = new HttpClient())
-                    using (var request = new HttpRequestMessage(HttpMethod.Post, (string)config.Authentication[HttpConstants.KeyName.Url]))
+                    var cancellationTokenSource = new CancellationTokenSource();
+                    cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+
+                    using (HttpResponseMessage response 
+                        = httpClient.PostAsync(
+                            httpClient.BaseAddress,
+                            request.Content, 
+                            cancellationTokenSource.Token).Result)
                     {
-                        if (config.Authentication.ContainsKey(HttpConstants.KeyName.Authorization))
+                        if (response.IsSuccessStatusCode)
                         {
-                            if ((string)config.Authentication[HttpConstants.KeyName.Authorization] != null)
+                            using (HttpContent content = response.Content)
                             {
-                                request.Headers.Add("Authorization", (string)config.Authentication[HttpConstants.KeyName.Authorization]);
+                                var responseJson = content.ReadAsStringAsync().Result;
+                                _logger.LogInformation(
+                                    $@"Sent outgoing data. Uri: {{uri}} Response: {{result}}",
+                                    (string)config.Authentication[HttpConstants.KeyName.Url],
+                                    response.StatusCode);
                             }
-                        }
-                        
-                        //request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(hookDefinition.MimeType));
-                        // request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CluedIn-Server", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                        request.Headers.Add("X-Subject-Id", containerName);
-                        request.Content = new PushStreamContent((stream, httpContent, transportContext) =>
-                        {
-                            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                            var json = new JObject();
-                            foreach (var kp in data)
-                            {
-                                if (kp.Value != null)
-                                {
-                                    if (kp.Value.ToString() != string.Empty)
-                                        json.Add(kp.Key, kp.Value.ToString());
-                                }
-                            }
-
-                            using (var textWriter = new StreamWriter(stream))
-                                JsonUtility.Serialize(json, textWriter);
-                        }, MediaTypeHeaderValue.Parse("application/json"));
-
-                        var cancellationTokenSource = new CancellationTokenSource();
-                        cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
-
-                        using (var result = await client.SendAsync(request, cancellationTokenSource.Token))
-                        {
-                            if (result.IsSuccessStatusCode)
-                            {
-                                _logger.LogInformation("Sent outgoing data. Uri: {uri} Response: {result}", HttpConstants.KeyName.Url, result.StatusCode);
-                            }
-                            else
-                            {
-                                _logger.LogError("Failed to send outgoing custom hook to external party. Uri: {uri} Response: {result}", HttpConstants.KeyName.Url, result.StatusCode);
-                            }
+                        } else {
+                            _logger.LogError(
+                                $@"Failed to send outgoing custom hook to external party.
+                                    Uri: {{uri}} Response: {{result}}",
+                                (string)config.Authentication[HttpConstants.KeyName.Url],
+                                response.StatusCode);
                         }
                     }
+
                 },
                 isTransient: ExceptionHelper.ShouldRequeue);
 
@@ -164,6 +147,49 @@ namespace CluedIn.Connector.Http.Connector
                 _logger.LogError(e, message);
                 throw new StoreDataException(message);
             }
+        }
+
+        private static HttpClient GetHttpClient(IConnectorConnection config)
+        {
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new System.Uri((string)config.Authentication[HttpConstants.KeyName.Url]);
+            client.DefaultRequestHeaders
+                .Accept
+                .Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return client;
+        }
+
+        private static HttpRequestMessage GetRequest(IConnectorConnection config, string json)
+        {
+            HttpRequestMessage request
+                                    = new HttpRequestMessage(HttpMethod.Post, "relativeAddress");
+
+            if (config.Authentication.ContainsKey(HttpConstants.KeyName.Authorization)
+                && (string)config.Authentication[HttpConstants.KeyName.Authorization] != null)
+            {
+                request.Headers.Add(
+                    "Authorization",
+                    (string)config.Authentication[HttpConstants.KeyName.Authorization]);
+            }
+
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            return request;
+        }
+
+        private static string GetJsonFromData(IDictionary<string, object> data)
+        {
+            var json = new JObject();
+            foreach (var kp in data)
+            {
+                if (kp.Value != null)
+                {
+                    if (kp.Value.ToString() != string.Empty)
+                        json.Add(kp.Key, kp.Value.ToString());
+                }
+            }
+            var r = JsonUtility.Serialize(json);
+            return r;
         }
 
         public override async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, IEnumerable<string> edges)
