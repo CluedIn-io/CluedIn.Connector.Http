@@ -121,7 +121,7 @@ namespace CluedIn.Connector.Http.Connector
                         
                         //request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(hookDefinition.MimeType));
                         // request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CluedIn-Server", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                        //request.Headers.Add("Content-Type", "application/json");
+                        request.Headers.Add("Content-Type", "application/json");
                         request.Headers.Add("X-Subject-Id", containerName);
                         request.Content = new PushStreamContent((stream, httpContent, transportContext) =>
                         {
