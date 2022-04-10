@@ -137,7 +137,7 @@ namespace CluedIn.Connector.Http.Connector
 
                             using (var textWriter = new StreamWriter(stream))
                                 JsonUtility.Serialize(json, textWriter);
-                        });
+                        }, MediaTypeHeaderValue.Parse("application/json"));
 
                         var cancellationTokenSource = new CancellationTokenSource();
                         cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
