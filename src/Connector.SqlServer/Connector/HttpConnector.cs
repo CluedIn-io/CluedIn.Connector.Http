@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Core;
 using CluedIn.Core.Connectors;
-using CluedIn.Core.Data.Vocabularies;
 using CluedIn.Core.DataStore;
 using CluedIn.Core.Processing;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
@@ -92,12 +87,35 @@ namespace CluedIn.Connector.Http.Connector
 
         public override async Task<bool> VerifyConnection(ExecutionContext executionContext, Guid providerDefinitionId)
         {
-            return await Task.FromResult(true);
+            var _config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+
+            return await VerifyConnection(_config);
         }
 
         public override async Task<bool> VerifyConnection(ExecutionContext executionContext, IDictionary<string, object> config)
         {
-            return await Task.FromResult(true);
+            var _config = new ConnectorConnectionBase
+            {
+                Authentication = config
+            };
+
+            return await VerifyConnection(_config);
+        }
+
+        private async Task<bool> VerifyConnection(IConnectorConnection config)
+        {
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Head, (string)config.Authentication[HttpConstants.KeyName.Url]))
+                {
+                    var cancellationTokenSource = new CancellationTokenSource();
+                    cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+                    using (var result = await client.SendAsync(request, cancellationTokenSource.Token))
+                    {
+                        return await Task.FromResult(result.IsSuccessStatusCode);
+                    }
+                }
+            }
         }
 
         public override async Task StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, IDictionary<string, object> data)
