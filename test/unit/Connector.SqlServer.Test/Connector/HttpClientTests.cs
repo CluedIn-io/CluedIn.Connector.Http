@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using CluedIn.Connector.Http.Connector;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace CluedIn.Connector.Http.Unit.Tests.Connector
@@ -12,7 +14,8 @@ namespace CluedIn.Connector.Http.Unit.Tests.Connector
 
         public HttpClientTests()
         {
-            _sut = new HttpPostClient();
+            var logger = new Mock<ILogger<HttpPostClient>>();
+            _sut = new HttpPostClient(logger.Object);
         }
 
         //[Fact]

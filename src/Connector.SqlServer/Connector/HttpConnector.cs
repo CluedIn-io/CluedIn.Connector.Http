@@ -8,18 +8,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Core;
 using CluedIn.Core.Connectors;
+using CluedIn.Core.Data.Parts;
 using CluedIn.Core.DataStore;
 using CluedIn.Core.Processing;
+using CluedIn.Core.Streams.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
 namespace CluedIn.Connector.Http.Connector
 {
-    public class HttpConnector : ConnectorBase
+    public class HttpConnector : ConnectorBase, IConnectorStreamModeSupport
     {
         private readonly ILogger<HttpConnector> _logger;
         private readonly IHttpClient _client;
+        private StreamMode StreamMode { get; set; } = StreamMode.Sync;
 
         public HttpConnector(IConfigurationRepository repo, ILogger<HttpConnector> logger, IHttpClient client) : base(repo)
         {
@@ -120,72 +123,82 @@ namespace CluedIn.Connector.Http.Connector
 
         public override async Task StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, IDictionary<string, object> data)
         {
-            try
-            {
-                await ActionExtensions.ExecuteWithRetry(async () =>
-                {
-                    var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+            var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
 
-                    using (var client = new HttpClient())
-                    using (var request = new HttpRequestMessage(HttpMethod.Post, (string)config.Authentication[HttpConstants.KeyName.Url]))
-                    {
-                        if (config.Authentication.ContainsKey(HttpConstants.KeyName.Authorization))
-                        {
-                            if ((string)config.Authentication[HttpConstants.KeyName.Authorization] != null)
-                            {
-                                request.Headers.Add("Authorization", (string)config.Authentication[HttpConstants.KeyName.Authorization]);
-                            }
-                        }
-                        
-                        //request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(hookDefinition.MimeType));
-                        // request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CluedIn-Server", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                        request.Headers.Add("X-Subject-Id", containerName);
-                        request.Content = new PushStreamContent((stream, httpContent, transportContext) =>
-                        {
-                            var json = new JObject();
-                            foreach (var kp in data)
-                            {
-                                if (kp.Value != null)
-                                {
-                                    if (kp.Value.ToString() != string.Empty)
-                                        json.Add(kp.Key, kp.Value.ToString());
-                                }
-                            }
-
-                            using (var textWriter = new StreamWriter(stream))
-                                JsonUtility.Serialize(json, textWriter);
-                        }, MediaTypeHeaderValue.Parse("application/json"));
-
-                        var cancellationTokenSource = new CancellationTokenSource();
-                        cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
-
-                        using (var result = await client.SendAsync(request, cancellationTokenSource.Token))
-                        {
-                            if (result.IsSuccessStatusCode)
-                            {
-                                _logger.LogInformation("Sent outgoing data. Uri: {uri} Response: {result}", HttpConstants.KeyName.Url, result.StatusCode);
-                            }
-                            else
-                            {
-                                _logger.LogError("Failed to send outgoing custom hook to external party. Uri: {uri} Response: {result}", HttpConstants.KeyName.Url, result.StatusCode);
-                            }
-                        }
-                    }
-                },
-                isTransient: ExceptionHelper.ShouldRequeue);
-
-            }
-            catch (Exception e)
-            {
-                var message = $"Could not store data into Container '{containerName}' for Connector {providerDefinitionId}";
-                _logger.LogError(e, message);
-                throw new StoreDataException(message);
-            }
+            await _client.SendAsync(config, providerDefinitionId, containerName, data);
         }
 
         public override async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, IEnumerable<string> edges)
         {
-            await Task.FromResult(0);
+            var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+
+            var data = new Dictionary<string, object>
+            {
+                { "OriginEntityCode", originEntityCode },
+                { "Edges", edges }
+            };
+
+            await _client.SendAsync(config, providerDefinitionId, containerName, data);
+        }
+
+        public IList<StreamMode> GetSupportedModes()
+        {
+            return new List<StreamMode> { StreamMode.Sync, StreamMode.EventStream };
+        }
+
+        public void SetMode(StreamMode mode)
+        {
+            StreamMode = mode;
+        }
+
+        public Task<string> GetCorrelationId()
+        {
+            return Task.FromResult(Guid.NewGuid().ToString());
+        }
+
+        public async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, string correlationId, DateTimeOffset timestamp, VersionChangeType changeType, IEnumerable<string> edges)
+        {
+            if (StreamMode == StreamMode.EventStream)
+            {
+                var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+
+                var dataWrapper = new Dictionary<string, object>
+                {
+                    { "TimeStamp", timestamp },
+                    { "VersionChangeType", changeType.ToString() },
+                    { "CorrelationId", correlationId },
+                    { "OriginEntityCode", originEntityCode },
+                    { "Edges", edges },
+                };
+
+                await _client.SendAsync(config, providerDefinitionId, containerName, dataWrapper);
+            }
+            else
+            {
+                await StoreEdgeData(executionContext, providerDefinitionId, containerName, originEntityCode, edges);
+            }
+        }
+
+        public async Task StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string correlationId, DateTimeOffset timestamp, VersionChangeType changeType, IDictionary<string, object> data)
+        {
+            if (StreamMode == StreamMode.EventStream)
+            {
+                var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+
+                var dataWrapper = new Dictionary<string, object>
+                {
+                    { "TimeStamp", timestamp },
+                    { "VersionChangeType", changeType.ToString() },
+                    { "CorrelationId", correlationId },
+                    { "Data", data }
+                };
+
+                await _client.SendAsync(config, providerDefinitionId, containerName, dataWrapper);
+            }
+            else
+            {
+                await StoreData(executionContext, providerDefinitionId, containerName, data);
+            }
         }
     }
 }
