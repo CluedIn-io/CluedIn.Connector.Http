@@ -118,26 +118,34 @@ namespace CluedIn.Connector.Http.Connector
                                 request.Headers.Add("Authorization", (string)config.Authentication[HttpConstants.KeyName.Authorization]);
                             }
                         }
-                        
+
                         //request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(hookDefinition.MimeType));
                         // request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CluedIn-Server", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()));
                         request.Headers.Add("X-Subject-Id", containerName);
-                        request.Content = new PushStreamContent((stream, httpContent, transportContext) =>
+
+                        var json = new JObject();
+                        foreach (var kp in data)
                         {
-                            var json = new JObject();
-                            foreach (var kp in data)
+                            if (kp.Value != null)
                             {
-                                if (kp.Value != null)
-                                {
-                                    if (kp.Value.ToString() != string.Empty)
-                                        json.Add(kp.Key, kp.Value.ToString());
-                                }
+                                if (kp.Value.ToString() != string.Empty)
+                                    json.Add(kp.Key, kp.Value.ToString());
                             }
+                        }
 
-                            using (var textWriter = new StreamWriter(stream))
-                                JsonUtility.Serialize(json, textWriter);
-                        }, MediaTypeHeaderValue.Parse("application/json"));
 
+                        request.Content = new StringContent(JsonUtility.Serialize(json), Encoding.UTF8, "application/json");
+
+                        //var content = new PushStreamContent((stream, httpContent, transportContext) =>
+                        //{
+
+
+                        //    using (var textWriter = new StreamWriter(stream))
+                        //        JsonUtility.Serialize(json, textWriter);
+                        //}, MediaTypeHeaderValue.Parse("application/json"));
+                        //request.Content = content;
+                        request.Headers.TransferEncodingChunked = true;
+                        //request.Headers.Add("Content-Length", content.);
                         var cancellationTokenSource = new CancellationTokenSource();
                         cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
 
