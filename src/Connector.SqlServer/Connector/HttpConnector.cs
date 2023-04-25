@@ -7,11 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Core.Caching;
 using CluedIn.Core.Connectors;
-//using CluedIn.Core.Data.Parts;
 using CluedIn.Core.DataStore;
 using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
-using Newtonsoft.Json;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
 namespace CluedIn.Connector.Http.Connector
@@ -20,7 +18,6 @@ namespace CluedIn.Connector.Http.Connector
     {
         private readonly IConfigurationRepository _configurationRepository;
         private readonly IHttpClient _client;
-        //private StreamMode StreamMode { get; set; } = StreamMode.Sync;
 
         public HttpConnector(IConfigurationRepository configurationRepository, IHttpClient client) : base(HttpConstants.ProviderId)
         {
@@ -99,7 +96,7 @@ namespace CluedIn.Connector.Http.Connector
             }
             catch
             {
-                return await Task.FromResult(false);
+                return await Task.FromResult(new ConnectionVerificationResult(false, "Invalid URL"));
             }
 
             using (var client = new HttpClient())
@@ -110,7 +107,7 @@ namespace CluedIn.Connector.Http.Connector
                     cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
                     using (var result = await client.SendAsync(request, cancellationTokenSource.Token))
                     {
-                        return await Task.FromResult(new ConnectionVerificationResult(result.IsSuccessStatusCode));
+                        return await Task.FromResult(new ConnectionVerificationResult(result.IsSuccessStatusCode, result.StatusCode.ToString()));
                     }
                 }
             }
@@ -151,8 +148,6 @@ namespace CluedIn.Connector.Http.Connector
             }
             // end match previous version of the connector
 
-            var jsonSerializer = new JsonSerializer { TypeNameHandling = TypeNameHandling.None };
-
             data.Add("OutgoingEdges", connectorEntityData.OutgoingEdges);
             data.Add("IncomingEdges", connectorEntityData.IncomingEdges);
 
@@ -184,78 +179,10 @@ namespace CluedIn.Connector.Http.Connector
             throw new NotSupportedException();
         }
 
-        //public override async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, IEnumerable<string> edges)
-        //{
-        //    var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
-
-        //    var data = new Dictionary<string, object>
-        //    {
-        //        { "OriginEntityCode", originEntityCode },
-        //        { "Edges", edges }
-        //    };
-
-        //    await _client.SendAsync(config, providerDefinitionId, containerName, data);
-        //}
-
         public override IReadOnlyCollection<StreamMode> GetSupportedModes()
         {
             return new List<StreamMode> { StreamMode.Sync, StreamMode.EventStream };
         }
-
-        //public void SetMode(StreamMode mode)
-        //{
-        //    StreamMode = mode;
-        //}
-
-        //public Task<string> GetCorrelationId()
-        //{
-        //    return Task.FromResult(Guid.NewGuid().ToString());
-        //}
-
-        //public async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, string correlationId, DateTimeOffset timestamp, VersionChangeType changeType, IEnumerable<string> edges)
-        //{
-        //    if (StreamMode == StreamMode.EventStream)
-        //    {
-        //        var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
-
-        //        var dataWrapper = new Dictionary<string, object>
-        //        {
-        //            { "TimeStamp", timestamp },
-        //            { "VersionChangeType", changeType.ToString() },
-        //            { "CorrelationId", correlationId },
-        //            { "OriginEntityCode", originEntityCode },
-        //            { "Edges", edges },
-        //        };
-
-        //        await _client.SendAsync(config, providerDefinitionId, containerName, dataWrapper);
-        //    }
-        //    else
-        //    {
-        //        await StoreEdgeData(executionContext, providerDefinitionId, containerName, originEntityCode, edges);
-        //    }
-        //}
-
-        //public async Task StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string correlationId, DateTimeOffset timestamp, VersionChangeType changeType, IDictionary<string, object> data)
-        //{
-        //    if (StreamMode == StreamMode.EventStream)
-        //    {
-        //        var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
-
-        //        var dataWrapper = new Dictionary<string, object>
-        //        {
-        //            { "TimeStamp", timestamp },
-        //            { "VersionChangeType", changeType.ToString() },
-        //            { "CorrelationId", correlationId },
-        //            { "Data", data }
-        //        };
-
-        //        await _client.SendAsync(config, providerDefinitionId, containerName, dataWrapper);
-        //    }
-        //    else
-        //    {
-        //        await StoreData(executionContext, providerDefinitionId, containerName, data);
-        //    }
-        //}
 
         public virtual Task<IConnectorConnection> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
         {
