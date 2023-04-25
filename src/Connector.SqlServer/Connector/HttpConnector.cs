@@ -5,10 +5,9 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using CluedIn.Connector.Http.Services;
 using CluedIn.Core;
-using CluedIn.Core.Caching;
 using CluedIn.Core.Connectors;
-using CluedIn.Core.DataStore;
 using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
@@ -17,13 +16,15 @@ namespace CluedIn.Connector.Http.Connector
 {
     public class HttpConnector : ConnectorBaseV2
     {
-        private readonly IConfigurationRepository _configurationRepository;
         private readonly IHttpClient _client;
+        private readonly IClock _clock;
+        private readonly ICorrelationIdGenerator _correlationIdGenerator;
 
-        public HttpConnector(IConfigurationRepository configurationRepository, IHttpClient client) : base(HttpConstants.ProviderId)
+        public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId)
         {
-            _configurationRepository = configurationRepository;
             _client = client ?? throw new ArgumentNullException(nameof(client));
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            _correlationIdGenerator = correlationIdGenerator ?? throw new ArgumentNullException(nameof(correlationIdGenerator));
         }
 
         public override async Task CreateContainer(ExecutionContext executionContext, Guid providerDefinitionId, CreateContainerModelV2 model)
@@ -160,9 +161,9 @@ namespace CluedIn.Connector.Http.Connector
                 // TODO timestamp & correlationId were passed in the signature in the previous version. Check where we get these now as they do not appear to be part of ConnectorEntityData
                 data = new Dictionary<string, object>
                         {
-                            { "TimeStamp", DateTime.Now },
+                            { "TimeStamp", _clock.Now },
                             { "VersionChangeType", connectorEntityData.ChangeType.ToString() },
-                            { "CorrelationId", Guid.NewGuid() },
+                            { "CorrelationId", _correlationIdGenerator.Next() },
                             { "Data", data }
                         };
             }
@@ -186,19 +187,9 @@ namespace CluedIn.Connector.Http.Connector
             return new List<StreamMode> { StreamMode.Sync, StreamMode.EventStream };
         }
 
-        public virtual Task<IConnectorConnection> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
+        public virtual async Task<IConnectorConnection> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
         {
-            var key = $"AuthenticationDetails_{providerDefinitionId}";
-            ICachePolicy GetPolicy(ICachePolicy cachePolicy) => new CachePolicy { SlidingExpiration = new TimeSpan(0, 0, 1, 0) };
-
-            var result = executionContext.ApplicationContext.System.Cache.GetItem(key, () =>
-            {
-                var dictionary = _configurationRepository.GetConfigurationById(executionContext, providerDefinitionId);
-
-                return new ConnectorConnectionBase { Authentication = dictionary };
-            }, cachePolicy: GetPolicy);
-
-            return Task.FromResult(result as IConnectorConnection);
+            return await AuthenticationDetailsHelper.GetAuthenticationDetails(executionContext, providerDefinitionId);
         }
     }
 }

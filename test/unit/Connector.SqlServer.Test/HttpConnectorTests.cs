@@ -13,6 +13,7 @@ using CluedIn.Core;
 using FluentAssertions;
 using Moq;
 using Castle.MicroKernel.Resolvers;
+using CluedIn.Connector.Http.Services;
 using CluedIn.Core.Caching;
 using CluedIn.Core.Connectors;
 using CluedIn.Core.Data;
@@ -41,10 +42,8 @@ namespace CluedIn.Connector.Http.Unit.Tests
             var connector = container.Resolve<HttpConnector>();
 
             // act
-            var response = await connector.VerifyConnection(executionContext, new Dictionary<string, object>
-            {
-                { HttpConstants.KeyName.Url, url }
-            });
+            var response = await connector.VerifyConnection(executionContext,
+                new Dictionary<string, object> { { HttpConstants.KeyName.Url, url } });
 
             // assert
             response.Should().NotBeNull();
@@ -91,10 +90,8 @@ Content-Length: 0
             var connector = container.Resolve<HttpConnector>();
 
             // act
-            var response = await connector.VerifyConnection(executionContext, new Dictionary<string, object>
-            {
-                { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" }
-            });
+            var response = await connector.VerifyConnection(executionContext,
+                new Dictionary<string, object> { { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" } });
 
             // assert
             response.Should().NotBeNull();
@@ -146,7 +143,7 @@ Content-Length: 0
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
-                { HttpConstants.KeyName.Authorization, "authvalue"},
+                { HttpConstants.KeyName.Authorization, "authvalue" },
             });
 
             connectorMock.CallBase = true;
@@ -162,13 +159,13 @@ Content-Length: 0
                 "/Person",
                 new[]
                 {
-                    new ConnectorPropertyData("Name", "Jean Luc Picard", new EntityPropertyConnectorPropertyDataType(typeof(string))),
-                    new ConnectorPropertyData("user.lastName", "Picard", new VocabularyKeyConnectorPropertyDataType(new VocabularyKey("user.lastName")))
+                    new ConnectorPropertyData("Name", "Jean Luc Picard",
+                        new EntityPropertyConnectorPropertyDataType(typeof(string))),
+                    new ConnectorPropertyData("user.lastName", "Picard",
+                        new VocabularyKeyConnectorPropertyDataType(new VocabularyKey("user.lastName")))
                 },
-                new IEntityCode[]
-                {
-                    EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0")
-                }, null, null);
+                new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
+                null, null);
 
             // act
             await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
@@ -197,7 +194,7 @@ Content-Length: 351
         }
 
         [Fact]
-        internal async Task VerifyStoreDataWithEventStream()
+        internal async Task VerifyStoreEventData()
         {
             // arrange
             string serverReceivedRequest = null;
@@ -229,6 +226,14 @@ Content-Length: 0
             container.Register(Component.For<IHttpClient>().ImplementedBy<HttpPostClient>());
             container.Register(Component.For<ILazyComponentLoader>().ImplementedBy<AutoMockingLazyComponentLoader>());
 
+            var mockClock = new Mock<IClock>();
+            mockClock.Setup(x => x.Now).Returns(new DateTimeOffset(2023, 4, 25, 19, 18, 23, TimeSpan.FromHours(10)));
+            container.Register(Component.For<IClock>().Instance(mockClock.Object));
+
+            var mockIdGenerator = new Mock<ICorrelationIdGenerator>();
+            mockIdGenerator.Setup(x => x.Next()).Returns("corroid");
+            container.Register(Component.For<ICorrelationIdGenerator>().Instance(mockIdGenerator.Object));
+
             var executionContext = container.Resolve<ExecutionContext>();
 
             var connectorMock = new Mock<HttpConnector>(MockBehavior.Default,
@@ -239,7 +244,7 @@ Content-Length: 0
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
-                { HttpConstants.KeyName.Authorization, "authvalue"},
+                { HttpConstants.KeyName.Authorization, "authvalue" },
             });
 
             connectorMock.CallBase = true;
@@ -248,20 +253,23 @@ Content-Length: 0
 
             var connector = connectorMock.Object;
 
-            var data = new Dictionary<string, object>();
-            data.Add("Name", "Jean Luc Picard");
-            data.Add("user.lastName", "Picard");
-            data.Add("Id", "69e26b81-bcbf-54f7-af97-be056f73bf9a");
-            data.Add("PersistHash", "1lzghdhhgqlnucj078/77q==");
-            data.Add("OriginEntityCode", "/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0");
-            data.Add("EntityType", "/Person");
-            data.Add("Codes", new[] { "/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0" });
-
-            connector.SetMode(StreamMode.EventStream);
+            var data = new ConnectorEntityData(VersionChangeType.Added, StreamMode.EventStream,
+                Guid.Parse("69e26b81-bcbf-54f7-af97-be056f73bf9a"),
+                new ConnectorEntityPersistInfo("1lzghdhhgqlnucj078/77q==", 1), null,
+                EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0"),
+                "/Person",
+                new[]
+                {
+                    new ConnectorPropertyData("Name", "Jean Luc Picard",
+                        new EntityPropertyConnectorPropertyDataType(typeof(string))),
+                    new ConnectorPropertyData("user.lastName", "Picard",
+                        new VocabularyKeyConnectorPropertyDataType(new VocabularyKey("user.lastName")))
+                },
+                new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
+                null, null);
 
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", "corroid",
-                new DateTimeOffset(2023, 4, 25, 19, 18, 23, TimeSpan.FromHours(10)), VersionChangeType.Added, data);
+            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -290,7 +298,6 @@ Content-Length: 496
   }}
 }}");
         }
-    }
 
         [Fact]
         internal async Task VerifyStoreDataWithEdges()
@@ -335,7 +342,7 @@ Content-Length: 0
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
-                { HttpConstants.KeyName.Authorization, "authvalue"},
+                { HttpConstants.KeyName.Authorization, "authvalue" },
             });
 
             connectorMock.CallBase = true;
@@ -357,8 +364,20 @@ Content-Length: 0
                         new VocabularyKeyConnectorPropertyDataType(new VocabularyKey("user.lastName")))
                 },
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
-                new[] { new EntityEdge(new EntityReference(EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0")), new EntityReference(EntityCode.FromKey("/EntityA#Somewhere:1234")), "/EntityA") },
-                new[] { new EntityEdge(new EntityReference(EntityCode.FromKey("/EntityB#Somewhere:5678")), new EntityReference(EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0")), "/EntityB") });
+                new[]
+                {
+                    new EntityEdge(
+                        new EntityReference(
+                            EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0")),
+                        new EntityReference(EntityCode.FromKey("/EntityA#Somewhere:1234")), "/EntityA")
+                },
+                new[]
+                {
+                    new EntityEdge(new EntityReference(EntityCode.FromKey("/EntityB#Somewhere:5678")),
+                        new EntityReference(
+                            EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0")),
+                        "/EntityB")
+                });
 
             // act
             await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
