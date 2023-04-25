@@ -154,6 +154,8 @@ namespace CluedIn.Connector.Http.Connector
                 data.Add("IncomingEdges", connectorEntityData.IncomingEdges);
             }
 
+            data.Add("ChangeType", connectorEntityData.ChangeType.ToString());
+
             var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
             if (connectorEntityData.StreamMode == StreamMode.EventStream)
