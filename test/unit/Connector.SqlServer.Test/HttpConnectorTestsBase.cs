@@ -15,7 +15,7 @@ namespace CluedIn.Connector.Http.Unit.Tests
 
         public HttpConnectorTestsBase()
         {
-            Sut = new HttpConnector(Repo.Object, Logger.Object, Client.Object);
+            //Sut = new HttpConnector(Repo.Object, Logger.Object, Client.Object);
         }
     }
 }
