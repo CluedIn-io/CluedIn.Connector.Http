@@ -92,9 +92,19 @@ namespace CluedIn.Connector.Http.Connector
 
         private async Task<ConnectionVerificationResult> VerifyConnection(IConnectorConnection config)
         {
+            var url = (string)config.Authentication[HttpConstants.KeyName.Url];
+            try
+            {
+                new Uri(url);
+            }
+            catch
+            {
+                return await Task.FromResult(false);
+            }
+
             using (var client = new HttpClient())
             {
-                using (var request = new HttpRequestMessage(HttpMethod.Head, (string)config.Authentication[HttpConstants.KeyName.Url]))
+                using (var request = new HttpRequestMessage(HttpMethod.Head, url))
                 {
                     var cancellationTokenSource = new CancellationTokenSource();
                     cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
@@ -206,7 +216,7 @@ namespace CluedIn.Connector.Http.Connector
         //{
         //    if (StreamMode == StreamMode.EventStream)
         //    {
-        //        var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+        //        var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
         //        var dataWrapper = new Dictionary<string, object>
         //        {
@@ -229,7 +239,7 @@ namespace CluedIn.Connector.Http.Connector
         //{
         //    if (StreamMode == StreamMode.EventStream)
         //    {
-        //        var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+        //        var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
         //        var dataWrapper = new Dictionary<string, object>
         //        {
