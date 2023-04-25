@@ -157,7 +157,8 @@ Content-Length: 0
             var connectionMock = new Mock<IConnectorConnection>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
-                { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" }
+                { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
+                { HttpConstants.KeyName.Authorization, "authvalue"},
             });
 
             connectorMock.CallBase = true;
@@ -177,6 +178,7 @@ Content-Length: 0
 
             serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
+Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
 Content-Length: 23
