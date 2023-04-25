@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using CluedIn.Core;
 using CluedIn.Core.Caching;
 using CluedIn.Core.Connectors;
 using CluedIn.Core.DataStore;
@@ -121,17 +122,9 @@ namespace CluedIn.Connector.Http.Connector
         public override async Task<SaveResult> StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, ConnectorEntityData connectorEntityData)
         {
             // matching output format of previous version of the connector
-            var data = connectorEntityData.Properties.ToDictionary(x => GetValidMappingDestinationPropertyName(executionContext, providerDefinitionId, x.Name).Result, x => x.Value);
+            var data = connectorEntityData.Properties.ToDictionary(x => x.Name, x => x.Value);
             data.Add("Id", connectorEntityData.EntityId);
-            data.Add("Codes",
-                new Dictionary<string, object>
-                {
-                    {
-                        "$type",
-                        "System.Collections.Generic.List`1[[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
-                    },
-                    { "$values", connectorEntityData.EntityCodes.Select(c => c.ToString()) }
-                });
+
             if (connectorEntityData.PersistInfo != null)
             {
                 data.Add("PersistHash", connectorEntityData.PersistInfo.PersistHash);
@@ -146,10 +139,19 @@ namespace CluedIn.Connector.Http.Connector
             {
                 data.Add("EntityType", connectorEntityData.EntityType.ToString());
             }
+
+            data.Add("Codes", connectorEntityData.EntityCodes.Select(c => c.ToString()));
             // end match previous version of the connector
 
-            data.Add("OutgoingEdges", connectorEntityData.OutgoingEdges);
-            data.Add("IncomingEdges", connectorEntityData.IncomingEdges);
+            if (connectorEntityData.OutgoingEdges.SafeEnumerate().Any())
+            {
+                data.Add("OutgoingEdges", connectorEntityData.OutgoingEdges);
+            }
+
+            if (connectorEntityData.IncomingEdges.SafeEnumerate().Any())
+            {
+                data.Add("IncomingEdges", connectorEntityData.IncomingEdges);
+            }
 
             var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
