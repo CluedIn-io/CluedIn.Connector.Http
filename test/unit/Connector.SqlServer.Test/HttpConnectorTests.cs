@@ -179,7 +179,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 351
+Content-Length: 377
 
 {{
   ""Name"": ""Jean Luc Picard"",
@@ -190,7 +190,8 @@ Content-Length: 351
   ""EntityType"": ""/Person"",
   ""Codes"": [
     ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
-  ]
+  ],
+  ""ChangeType"": ""Added""
 }}");
         }
 
@@ -280,7 +281,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 496
+Content-Length: 524
 
 {{
   ""TimeStamp"": ""2023-04-25T19:18:23+10:00"",
@@ -295,7 +296,8 @@ Content-Length: 496
     ""EntityType"": ""/Person"",
     ""Codes"": [
       ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
-    ]
+    ],
+    ""ChangeType"": ""Added""
   }}
 }}");
         }
@@ -391,7 +393,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 3501
+Content-Length: 3527
 
 {{
   ""Name"": ""Jean Luc Picard"",
@@ -528,7 +530,8 @@ Content-Length: 3501
       ""Weight"": null,
       ""Version"": 0
     }}
-  ]
+  ],
+  ""ChangeType"": ""Added""
 }}");
         }
 
