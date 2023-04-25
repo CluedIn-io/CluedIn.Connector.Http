@@ -90,7 +90,7 @@ namespace CluedIn.Connector.Http.Connector
 
         public override async Task<bool> VerifyConnection(ExecutionContext executionContext, Guid providerDefinitionId)
         {
-            var _config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+            var _config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
             return await VerifyConnection(_config);
         }
@@ -107,9 +107,19 @@ namespace CluedIn.Connector.Http.Connector
 
         private async Task<bool> VerifyConnection(IConnectorConnection config)
         {
+            var url = (string)config.Authentication[HttpConstants.KeyName.Url];
+            try
+            {
+                new Uri(url);
+            }
+            catch
+            {
+                return await Task.FromResult(false);
+            }
+
             using (var client = new HttpClient())
             {
-                using (var request = new HttpRequestMessage(HttpMethod.Head, (string)config.Authentication[HttpConstants.KeyName.Url]))
+                using (var request = new HttpRequestMessage(HttpMethod.Head, url))
                 {
                     var cancellationTokenSource = new CancellationTokenSource();
                     cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
@@ -123,14 +133,14 @@ namespace CluedIn.Connector.Http.Connector
 
         public override async Task StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, IDictionary<string, object> data)
         {
-            var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+            var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
             await _client.SendAsync(config, providerDefinitionId, containerName, data);
         }
 
         public override async Task StoreEdgeData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, string originEntityCode, IEnumerable<string> edges)
         {
-            var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+            var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
             var data = new Dictionary<string, object>
             {
@@ -160,7 +170,7 @@ namespace CluedIn.Connector.Http.Connector
         {
             if (StreamMode == StreamMode.EventStream)
             {
-                var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+                var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
                 var dataWrapper = new Dictionary<string, object>
                 {
@@ -183,7 +193,7 @@ namespace CluedIn.Connector.Http.Connector
         {
             if (StreamMode == StreamMode.EventStream)
             {
-                var config = await base.GetAuthenticationDetails(executionContext, providerDefinitionId);
+                var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
                 var dataWrapper = new Dictionary<string, object>
                 {

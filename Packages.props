@@ -27,6 +27,7 @@
     <PackageReference Update="Shouldly" Version="3.0.2" />
     <PackageReference Update="Microsoft.EntityFrameworkCore" version="$(_EntityFramework)" />
     <PackageReference Update="Microsoft.EntityFrameworkCore.InMemory" version="$(_EntityFramework)" />
+	<PackageReference Update="FluentAssertions" Version="6.11.0" />
   </ItemGroup>
   <ItemGroup>
     <!--
