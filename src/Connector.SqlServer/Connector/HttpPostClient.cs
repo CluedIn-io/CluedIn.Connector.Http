@@ -45,7 +45,7 @@ namespace CluedIn.Connector.Http.Connector
                 if (!result.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to send outgoing custom hook to external party. Uri: {uri} Response: {result}", config.Authentication[HttpConstants.KeyName.Url].ToString(), result.StatusCode);
-                    return new SaveResult(SaveResultState.Failed);
+                    return new SaveResult(SaveResultState.ReQueue);
                 }
 
                 _logger.LogDebug("Sent outgoing data. Uri: {uri} Response: {result}", config.Authentication[HttpConstants.KeyName.Url].ToString(), result.StatusCode);
@@ -56,7 +56,7 @@ namespace CluedIn.Connector.Http.Connector
                 var message = $"Could not store data into Container '{containerName}' for Connector {providerDefinitionId}";
                 _logger.LogError(e, message);
 
-                return new SaveResult(SaveResultState.Failed);
+                return new SaveResult(SaveResultState.ReQueue);
             }
         }
     }

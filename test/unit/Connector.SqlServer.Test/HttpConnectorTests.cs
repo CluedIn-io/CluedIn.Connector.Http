@@ -19,6 +19,7 @@ using CluedIn.Core.Connectors;
 using CluedIn.Core.Data;
 using CluedIn.Core.Data.Parts;
 using CluedIn.Core.Data.Vocabularies;
+using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
 
 namespace CluedIn.Connector.Http.Unit.Tests
@@ -529,6 +530,80 @@ Content-Length: 3501
     }}
   ]
 }}");
+        }
+
+        [Fact]
+        internal async Task VerifyStoreDataReturnReQueueForHttpError()
+        {
+            // arrange
+            string serverReceivedRequest = null;
+
+            var l = new TcpListener(IPAddress.Loopback, 0);
+            l.Start();
+
+            l.BeginAcceptTcpClient(result =>
+            {
+                var client = l.EndAcceptTcpClient(result);
+                var clientStream = client.GetStream();
+
+                var buffer = new byte[4 * 1024];
+
+                var read = clientStream.Read(buffer, 0, buffer.Length);
+
+                serverReceivedRequest = Encoding.UTF8.GetString(buffer, 0, read);
+
+                clientStream.Write(Encoding.UTF8.GetBytes(@"HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+
+"));
+
+            }, null);
+            var container = new WindsorContainer();
+            container.Register(Component.For<IWindsorContainer>().Instance(container));
+            container.Register(Component.For<IApplicationCache>().ImplementedBy<InMemoryApplicationCache>());
+            container.Register(Component.For<IHttpClient>().ImplementedBy<HttpPostClient>());
+            container.Register(Component.For<ILazyComponentLoader>().ImplementedBy<AutoMockingLazyComponentLoader>());
+
+            var executionContext = container.Resolve<ExecutionContext>();
+
+            var connectorMock = new Mock<HttpConnector>(MockBehavior.Default,
+                typeof(HttpConnector).GetConstructors().First().GetParameters()
+                    .Select(p => container.Resolve(p.ParameterType)).ToArray());
+
+            var connectionMock = new Mock<IConnectorConnection>();
+            connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
+            {
+                { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
+                { HttpConstants.KeyName.Authorization, "authvalue" },
+            });
+
+            connectorMock.CallBase = true;
+            connectorMock.Setup(x => x.GetAuthenticationDetails(executionContext, Guid.Empty))
+                .ReturnsAsync(connectionMock.Object);
+
+            var connector = connectorMock.Object;
+
+            var data = new ConnectorEntityData(VersionChangeType.Added, StreamMode.Sync,
+                Guid.Parse("69e26b81-bcbf-54f7-af97-be056f73bf9a"),
+                new ConnectorEntityPersistInfo("1lzghdhhgqlnucj078/77q==", 1), null,
+                EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0"),
+                "/Person",
+                new[]
+                {
+                    new ConnectorPropertyData("Name", "Jean Luc Picard",
+                        new EntityPropertyConnectorPropertyDataType(typeof(string))),
+                    new ConnectorPropertyData("user.lastName", "Picard",
+                        new VocabularyKeyConnectorPropertyDataType(new VocabularyKey("user.lastName")))
+                },
+                new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
+                null, null);
+
+            // act
+            var saveResult = await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+
+            // assert
+            serverReceivedRequest.Should().NotBeNull();
+            saveResult.State.Should().Be(SaveResultState.ReQueue);
         }
     }
 }
