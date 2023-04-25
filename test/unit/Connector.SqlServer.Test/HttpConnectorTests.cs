@@ -168,7 +168,13 @@ Content-Length: 0
             var connector = connectorMock.Object;
 
             var data = new Dictionary<string, object>();
-            data.Add("test", "value");
+            data.Add("Name", "Jean Luc Picard");
+            data.Add("user.lastName", "Picard");
+            data.Add("Id", "69e26b81-bcbf-54f7-af97-be056f73bf9a");
+            data.Add("PersistHash", "1lzghdhhgqlnucj078/77q==");
+            data.Add("OriginEntityCode", "/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0");
+            data.Add("EntityType", "/Person");
+            data.Add("Codes", new[] { "/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0" });
 
             // act
             await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
@@ -181,10 +187,18 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 23
+Content-Length: 351
 
 {{
-  ""test"": ""value""
+  ""Name"": ""Jean Luc Picard"",
+  ""user.lastName"": ""Picard"",
+  ""Id"": ""69e26b81-bcbf-54f7-af97-be056f73bf9a"",
+  ""PersistHash"": ""1lzghdhhgqlnucj078/77q=="",
+  ""OriginEntityCode"": ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0"",
+  ""EntityType"": ""/Person"",
+  ""Codes"": [
+    ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
+  ]
 }}");
         }
     }
