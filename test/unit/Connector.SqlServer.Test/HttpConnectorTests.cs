@@ -140,7 +140,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -168,8 +168,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -242,7 +246,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -270,8 +274,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -341,7 +349,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -382,8 +390,12 @@ Content-Length: 0
                         "/EntityB")
                 });
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -573,7 +585,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -601,8 +613,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            var saveResult = await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            var saveResult = await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
