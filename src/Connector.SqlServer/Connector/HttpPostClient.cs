@@ -19,7 +19,7 @@ namespace CluedIn.Connector.Http.Connector
             _logger = logger;
         }
 
-        public async Task<SaveResult> SendAsync(IConnectorConnection config, Guid providerDefinitionId, string containerName, IDictionary<string, object> data)
+        public async Task<SaveResult> SendAsync(IConnectorConnectionV2 config, Guid providerDefinitionId, string containerName, IDictionary<string, object> data)
         {
             try
             {

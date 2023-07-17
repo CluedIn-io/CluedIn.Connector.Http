@@ -140,7 +140,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -168,8 +168,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -179,7 +183,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 351
+Content-Length: 377
 
 {{
   ""Name"": ""Jean Luc Picard"",
@@ -190,7 +194,8 @@ Content-Length: 351
   ""EntityType"": ""/Person"",
   ""Codes"": [
     ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
-  ]
+  ],
+  ""ChangeType"": ""Added""
 }}");
         }
 
@@ -241,7 +246,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -269,8 +274,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -280,7 +289,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 496
+Content-Length: 524
 
 {{
   ""TimeStamp"": ""2023-04-25T19:18:23+10:00"",
@@ -295,7 +304,8 @@ Content-Length: 496
     ""EntityType"": ""/Person"",
     ""Codes"": [
       ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
-    ]
+    ],
+    ""ChangeType"": ""Added""
   }}
 }}");
         }
@@ -339,7 +349,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -380,8 +390,12 @@ Content-Length: 0
                         "/EntityB")
                 });
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();
@@ -391,7 +405,7 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 3501
+Content-Length: 3527
 
 {{
   ""Name"": ""Jean Luc Picard"",
@@ -528,7 +542,8 @@ Content-Length: 3501
       ""Weight"": null,
       ""Version"": 0
     }}
-  ]
+  ],
+  ""ChangeType"": ""Added""
 }}");
         }
 
@@ -570,7 +585,7 @@ Content-Length: 0
                 typeof(HttpConnector).GetConstructors().First().GetParameters()
                     .Select(p => container.Resolve(p.ParameterType)).ToArray());
 
-            var connectionMock = new Mock<IConnectorConnection>();
+            var connectionMock = new Mock<IConnectorConnectionV2>();
             connectionMock.Setup(x => x.Authentication).Returns(new Dictionary<string, object>
             {
                 { HttpConstants.KeyName.Url, $"http://{l.LocalEndpoint}/" },
@@ -598,8 +613,12 @@ Content-Length: 0
                 new IEntityCode[] { EntityCode.FromKey("/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0") },
                 null, null);
 
+            var streamModel = new Mock<IReadOnlyStreamModel>();
+            streamModel.Setup(x => x.ConnectorProviderDefinitionId).Returns(Guid.Empty);
+            streamModel.Setup(x => x.ContainerName).Returns("test_container");
+
             // act
-            var saveResult = await connector.StoreData(executionContext, Guid.Empty, "test_container", data);
+            var saveResult = await connector.StoreData(executionContext, streamModel.Object, data);
 
             // assert
             serverReceivedRequest.Should().NotBeNull();

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CluedIn.Connector.Http.Services;
 using CluedIn.Core;
 using CluedIn.Core.Connectors;
+using CluedIn.Core.Data.Relational;
 using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
@@ -27,27 +28,27 @@ namespace CluedIn.Connector.Http.Connector
             _correlationIdGenerator = correlationIdGenerator ?? throw new ArgumentNullException(nameof(correlationIdGenerator));
         }
 
-        public override async Task CreateContainer(ExecutionContext executionContext, Guid providerDefinitionId, CreateContainerModelV2 model)
+        public override async Task CreateContainer(ExecutionContext executionContext, Guid connectorProviderDefinitionId, IReadOnlyCreateContainerModelV2 model)
         {
             await Task.FromResult(0);
         }
 
-        public override async Task EmptyContainer(ExecutionContext executionContext, Guid providerDefinitionId, string id)
+        public override async Task EmptyContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
             await Task.FromResult(0);
         }
 
-        public override async Task ArchiveContainer(ExecutionContext executionContext, Guid providerDefinitionId, string id)
+        public override async Task ArchiveContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
             await Task.FromResult(0);
         }
 
-        public override async Task RenameContainer(ExecutionContext executionContext, Guid providerDefinitionId, string id, string newName)
+        public override async Task RenameContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel, string oldContainerName)
         {
             await Task.FromResult(0);
         }
 
-        public override async Task RemoveContainer(ExecutionContext executionContext, Guid providerDefinitionId, string id)
+        public override async Task RemoveContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
             await Task.FromResult(0);
         }
@@ -79,11 +80,11 @@ namespace CluedIn.Connector.Http.Connector
             return await Task.FromResult(new List<IConnectorContainer>());
         }
 
-        public override async Task<ConnectionVerificationResult> VerifyConnection(ExecutionContext executionContext, IDictionary<string, object> config)
+        public override async Task<ConnectionVerificationResult> VerifyConnection(ExecutionContext executionContext, IReadOnlyDictionary<string, object> config)
         {
             var connectionBase = new ConnectorConnectionBase
             {
-                Authentication = config
+                Authentication = config.ToDictionary(x => x.Key, x => x.Value)
             };
 
             return await VerifyConnection(connectionBase);
@@ -115,13 +116,16 @@ namespace CluedIn.Connector.Http.Connector
             }
         }
 
-        public override Task VerifyExistingContainer(ExecutionContext executionContext, StreamModel stream)
+        public override Task VerifyExistingContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
             return Task.FromResult(0);
         }
 
-        public override async Task<SaveResult> StoreData(ExecutionContext executionContext, Guid providerDefinitionId, string containerName, ConnectorEntityData connectorEntityData)
+        public override async Task<SaveResult> StoreData(ExecutionContext executionContext, IReadOnlyStreamModel streamModel, IReadOnlyConnectorEntityData connectorEntityData)
         {
+            var providerDefinitionId = streamModel.ConnectorProviderDefinitionId!.Value;
+            var containerName = streamModel.ContainerName;
+
             // matching output format of previous version of the connector
             var data = connectorEntityData.Properties.ToDictionary(x => x.Name, x => x.Value);
             data.Add("Id", connectorEntityData.EntityId);
@@ -154,6 +158,8 @@ namespace CluedIn.Connector.Http.Connector
                 data.Add("IncomingEdges", connectorEntityData.IncomingEdges);
             }
 
+            data.Add("ChangeType", connectorEntityData.ChangeType.ToString());
+
             var config = await GetAuthenticationDetails(executionContext, providerDefinitionId);
 
             if (connectorEntityData.StreamMode == StreamMode.EventStream)
@@ -171,13 +177,12 @@ namespace CluedIn.Connector.Http.Connector
             return await _client.SendAsync(config, providerDefinitionId, containerName, data);
         }
 
-        public override Task<ConnectorLatestEntityPersistInfo> GetLatestEntityPersistInfo(ExecutionContext executionContext, Guid providerDefinitionId, string containerName,
-            Guid entityId)
+        public override Task<ConnectorLatestEntityPersistInfo> GetLatestEntityPersistInfo(ExecutionContext executionContext, IReadOnlyStreamModel streamModel, Guid entityId)
         {
             throw new NotSupportedException();
         }
 
-        public override Task<IAsyncEnumerable<ConnectorLatestEntityPersistInfo>> GetLatestEntityPersistInfos(ExecutionContext executionContext, Guid providerDefinitionId, string containerName)
+        public override Task<IAsyncEnumerable<ConnectorLatestEntityPersistInfo>> GetLatestEntityPersistInfos(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
             throw new NotSupportedException();
         }
@@ -187,7 +192,7 @@ namespace CluedIn.Connector.Http.Connector
             return new List<StreamMode> { StreamMode.Sync, StreamMode.EventStream };
         }
 
-        public virtual async Task<IConnectorConnection> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
+        public virtual async Task<IConnectorConnectionV2> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
         {
             return await AuthenticationDetailsHelper.GetAuthenticationDetails(executionContext, providerDefinitionId);
         }
