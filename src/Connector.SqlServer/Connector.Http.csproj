@@ -20,6 +20,9 @@
     <PackageReference Include="Dapper.SqlBuilder" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Connectors.Batching\Connectors.Batching.csproj" />
+  </ItemGroup>
 
   <!-- Disable to above cluedin assets and enable the below for local debugging  -->
   <!--<ItemGroup>    

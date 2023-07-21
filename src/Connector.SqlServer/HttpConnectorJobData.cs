@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CluedIn.Core.Crawling;
 
@@ -5,27 +6,25 @@ namespace CluedIn.Connector.Http
 {
     public class HttpConnectorJobData : CrawlJobData
     {
-        public HttpConnectorJobData(IDictionary<string, object> configuration)
+        public HttpConnectorJobData(IDictionary<string, object> configuration, string containerName = null, Guid? providerDefinitionId = null)
         {
-            if (configuration == null)
-            {
-                return;
-            }
+            Configurations = configuration;
+            ContainerName = containerName;
+            ProviderDefinitionId = providerDefinitionId;
 
-            Authorization = GetValue<string>(configuration, HttpConstants.KeyName.Authorization);
-            Url = GetValue<string>(configuration, HttpConstants.KeyName.Url);
+            Authorization = Configurations.TryGetValue(HttpConstants.KeyName.Authorization, out var authObj) ? authObj.ToString() : null;
+            Url = Configurations.TryGetValue(HttpConstants.KeyName.Url, out var urlObj) ? urlObj.ToString() : null;
         }
 
         public IDictionary<string, object> ToDictionary()
         {
-            return new Dictionary<string, object> {
-                { HttpConstants.KeyName.Authorization, Authorization },
-                { HttpConstants.KeyName.Url, Url }
-            };
+            return Configurations;
         }
 
-        public string Authorization { get; set; }
-
-        public string Url { get; set; }
+        public IDictionary<string, object> Configurations { get; }
+        public string Authorization { get; }
+        public string Url { get; }
+        public string ContainerName { get; }
+        public Guid? ProviderDefinitionId { get; }
     }
 }
