@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CluedIn.Core.Processing;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -13,46 +12,71 @@ namespace CluedIn.Connector.Http.Connector
     public class HttpPostClient : IHttpClient
     {
         private readonly ILogger<HttpPostClient> _logger;
+        private readonly JsonSerializerSettings _serializerSettings;
+
         public HttpPostClient(ILogger<HttpPostClient> logger)
         {
             _logger = logger;
+            _serializerSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
         }
 
-        public async Task<SaveResult> SendAsync(HttpConnectorJobData jobData, IDictionary<string, object> data)
+        public async Task SendAsync(HttpConnectorJobData jobData, IDictionary<string, object>[] data)
         {
+            var headers = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("X-Subject-Id", jobData.ContainerName)
+            };
+            if (!string.IsNullOrEmpty(jobData.Authorization?.Trim()))
+            {
+                headers.Add(new KeyValuePair<string, string>("Authorization", jobData.Authorization));
+            }
+
             try
             {
                 using var client = new HttpClient();
-                using var request = new HttpRequestMessage(HttpMethod.Post, jobData.Url);
-                if (!string.IsNullOrEmpty(jobData.Authorization?.Trim()))
+                if (jobData.BatchingSupported)
                 {
-                    request.Headers.Add("Authorization", jobData.Authorization);
+                    await SendRequest(client, jobData, headers, data);
                 }
-
-                request.Headers.Add("X-Subject-Id", jobData.ContainerName);
-
-                var json = JsonConvert.SerializeObject(data, Formatting.Indented, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None });
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var cancellationTokenSource = new CancellationTokenSource();
-                cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
-
-                using var result = await client.SendAsync(request, cancellationTokenSource.Token);
-                if (!result.IsSuccessStatusCode)
+                else
                 {
-                    _logger.LogError("Failed to send outgoing custom hook to external party. Uri: {uri} Response: {result}", jobData.Url, result.StatusCode);
-                    return new SaveResult(SaveResultState.ReQueue);
+                    foreach (var item in data)
+                    {
+                        await SendRequest(client, jobData, headers, item);
+                    }
                 }
-
-                _logger.LogDebug("Sent outgoing data. Uri: {uri} Response: {result}", jobData.Url, result.StatusCode);
-                return new SaveResult(SaveResultState.Success);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, $"Could not store data into Container '{jobData.ContainerName}' for Connector {jobData.ProviderDefinitionId}");
-
-                return new SaveResult(SaveResultState.ReQueue);
+                throw;
             }
+        }
+
+        private async Task SendRequest(HttpClient client, HttpConnectorJobData jobData, List<KeyValuePair<string, string>> headers, object data)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, jobData.Url);
+            foreach(var header in headers)
+            {
+                request.Headers.Add(header.Key, header.Value);
+            }
+
+            var json = JsonConvert.SerializeObject(data, _serializerSettings);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+
+            using var result = await client.SendAsync(request, cancellationTokenSource.Token);
+            if (!result.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Failed to send outgoing custom hook to external party. Uri: {jobData.Url} Response: {result.StatusCode}");
+            }
+
+            _logger.LogDebug("Sent outgoing data. Uri: {uri} Response: {result}", jobData.Url, result.StatusCode);
         }
     }
 }

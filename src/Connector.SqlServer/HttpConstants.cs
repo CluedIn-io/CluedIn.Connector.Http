@@ -35,6 +35,10 @@ namespace CluedIn.Connector.Http
         public const string Category = "Connectivity";
         public const string Details = "Supports publishing of data to external Http Post endpoints.";
 
+        public const string Url = "url";
+        public const string Authorization = "authorization";
+        public const string BatchingSupported = nameof(BatchingSupported);
+
         public static AuthMethods AuthMethods = new AuthMethods
         {
             token = new Control[]
@@ -50,8 +54,13 @@ namespace CluedIn.Connector.Http
                 {
                     name = KeyName.Authorization,
                     displayName = "Authorization",
-                    type = "input",
-                    isRequired = false
+                    type = "input"
+                },
+                new Control
+                {
+                    name = BatchingSupported,
+                    displayName = BatchingSupported,
+                    type = "checkbox"
                 }
             }
         };

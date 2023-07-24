@@ -23,7 +23,7 @@ namespace CluedIn.Connector.Http.Connector
         private readonly IHttpClient _client;
         private readonly IClock _clock;
         private readonly ICorrelationIdGenerator _correlationIdGenerator;
-        private readonly PartitionedBuffer<HttpConnectorJobData, string> _buffer;
+        private readonly PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>> _buffer;
 
         public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId)
         {
@@ -31,7 +31,7 @@ namespace CluedIn.Connector.Http.Connector
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _correlationIdGenerator = correlationIdGenerator ?? throw new ArgumentNullException(nameof(correlationIdGenerator));
 
-            _buffer = new PartitionedBuffer<HttpConnectorJobData, string>(50, 60_000, Flush);
+            _buffer = new PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>>(50, 60_000, Flush);
         }
 
         ~HttpConnector()
@@ -138,7 +138,7 @@ namespace CluedIn.Connector.Http.Connector
             var containerName = streamModel.ContainerName;
 
             var connection = await GetAuthenticationDetails(executionContext, providerDefinitionId);
-            var configuration = new HttpConnectorJobData(connection.Authentication.ToDictionary(x => x.Key, x => x.Value), containerName);
+            var configuration = new HttpConnectorJobData(connection.Authentication.ToDictionary(x => x.Key, x => x.Value), containerName, providerDefinitionId);
 
             // matching output format of previous version of the connector
             var data = connectorEntityData.Properties.ToDictionary(x => x.Name, x => x.Value);
@@ -188,7 +188,7 @@ namespace CluedIn.Connector.Http.Connector
                         };
             }
 
-            await _buffer.Add(configuration, JsonConvert.SerializeObject(data));
+            await _buffer.Add(configuration, data);
 
             return SaveResult.Success;
         }
@@ -213,27 +213,14 @@ namespace CluedIn.Connector.Http.Connector
             return await AuthenticationDetailsHelper.GetAuthenticationDetails(executionContext, providerDefinitionId);
         }
 
-        private void Flush(HttpConnectorJobData configuration, string[] entityData)
+        private void Flush(HttpConnectorJobData configuration, Dictionary<string, object>[] entitiesData)
         {
-            if (entityData == null)
+            if (entitiesData == null || entitiesData.Length == 0)
             {
                 return;
             }
 
-            if (entityData.Length == 0)
-            {
-                return;
-            }
-
-            var settings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.None,
-                Formatting = Formatting.Indented,
-            };
-
-            var content = JsonConvert.SerializeObject(entityData.Select(JObject.Parse).ToArray(), settings);
-
-            _client.SendAsync(configuration, data).GetAwaiter().GetResult();
+            _client.SendAsync(configuration, entitiesData).GetAwaiter().GetResult();
         }
     }
 }
