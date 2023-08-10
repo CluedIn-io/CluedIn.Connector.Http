@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Connector.Http.Services;
+using CluedIn.Connectors.Batching;
 using CluedIn.Connectors.Batching.InMemory;
 using CluedIn.Core;
+using CluedIn.Core.Configuration;
 using CluedIn.Core.Connectors;
-using CluedIn.Core.Data.Relational;
 using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
@@ -25,13 +25,15 @@ namespace CluedIn.Connector.Http.Connector
         private readonly ICorrelationIdGenerator _correlationIdGenerator;
         private readonly PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>> _buffer;
 
-        public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId)
+        public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId, false)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _correlationIdGenerator = correlationIdGenerator ?? throw new ArgumentNullException(nameof(correlationIdGenerator));
 
-            _buffer = new PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>>(50, 60_000, Flush);
+            var batchRecordsThreshold = ConfigurationManagerEx.AppSettings.GetValue<int?>(HttpConstants.BatchRecordsThresholdKeyName, null);
+            var batchSyncInterval = ConfigurationManagerEx.AppSettings.GetValue<int?>(HttpConstants.BatchSyncIntervalKeyName, null);
+            _buffer = new PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>>(Flush, batchRecordsThreshold, batchSyncInterval);
         }
 
         ~HttpConnector()
@@ -188,7 +190,7 @@ namespace CluedIn.Connector.Http.Connector
                         };
             }
 
-            await _buffer.Add(configuration, data);
+            await _buffer.Add(configuration, data);            
 
             return SaveResult.Success;
         }
@@ -216,9 +218,7 @@ namespace CluedIn.Connector.Http.Connector
         private void Flush(HttpConnectorJobData configuration, Dictionary<string, object>[] entitiesData)
         {
             if (entitiesData == null || entitiesData.Length == 0)
-            {
-                return;
-            }
+                return;            
 
             _client.SendAsync(configuration, entitiesData).GetAwaiter().GetResult();
         }

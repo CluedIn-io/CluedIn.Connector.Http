@@ -13,7 +13,7 @@ namespace CluedIn.Connector.Http
             ProviderDefinitionId = providerDefinitionId;
 
             Authorization = Configurations.TryGetValue(HttpConstants.KeyName.Authorization, out var authConfig) ? authConfig.ToString() : null;
-            BatchingSupported = Configurations.TryGetValue(HttpConstants.BatchingSupported, out var batchingConfig) ? (bool) batchingConfig : false;
+            BatchingSupported = Configurations.TryGetValue(HttpConstants.BatchingSupported, out var batchingConfig) ? (bool)batchingConfig : false;
             Url = Configurations.TryGetValue(HttpConstants.KeyName.Url, out var urlConfig) ? urlConfig.ToString() : null;
         }
 
@@ -28,5 +28,24 @@ namespace CluedIn.Connector.Http
         public string ContainerName { get; }
         public Guid? ProviderDefinitionId { get; }
         public string Url { get; }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as HttpConnectorJobData);
+        }
+
+        public bool Equals(HttpConnectorJobData other)
+        {
+            return other != null &&
+                Authorization == other.Authorization &&
+                BatchingSupported == other.BatchingSupported &&
+                ContainerName == other.ContainerName &&
+                Url == other.Url;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Authorization, BatchingSupported, ContainerName, Url);
+        }
     }
 }

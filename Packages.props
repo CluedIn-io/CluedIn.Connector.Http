@@ -44,15 +44,6 @@
     <PackageReference Update="Dapper" Version="2.0.138" />
     <PackageReference Update="Dapper.SqlBuilder" Version="2.0.78" />
     <PackageReference Update="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
-  </ItemGroup>
-  <ItemGroup Label="Global tools">
-    <!--
-            Automatically added to each project with :
-            - IncludeAssets="Analyzers;Build"
-            - PrivateAssets="All"
-
-            DO NOT NEED TO BE ADDED AS A PACKAGEREFERENCE
-        -->
-    <!-- <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" /> -->
+    <PackageReference Update="CluedIn.Connectors.Batching" Version="1.0.0-*" />
   </ItemGroup>
 </Project>

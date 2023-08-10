@@ -52,8 +52,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connector.Http", "src\Conne
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connector.Http.Unit.Tests", "test\unit\Connector.SqlServer.Test\Connector.Http.Unit.Tests.csproj", "{C9C65773-EA29-44E4-B6A9-88ECBCE2CF11}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connectors.Batching", "src\Connectors.Batching\Connectors.Batching.csproj", "{4E161914-9839-4E11-9D4E-ED26C6833BED}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,10 +66,6 @@ Global
 		{C9C65773-EA29-44E4-B6A9-88ECBCE2CF11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9C65773-EA29-44E4-B6A9-88ECBCE2CF11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9C65773-EA29-44E4-B6A9-88ECBCE2CF11}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4E161914-9839-4E11-9D4E-ED26C6833BED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4E161914-9839-4E11-9D4E-ED26C6833BED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4E161914-9839-4E11-9D4E-ED26C6833BED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4E161914-9839-4E11-9D4E-ED26C6833BED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,7 +80,6 @@ Global
 		{17EE3C8D-BAE4-481A-B9CC-1BE878E86124} = {9BD54E81-D9C8-4419-82B8-8EE6CC7E2647}
 		{ED656EF9-9D15-45CA-B505-AF48AD8D0145} = {B2A52533-7FBF-41FE-A0AF-874FC54300B2}
 		{C9C65773-EA29-44E4-B6A9-88ECBCE2CF11} = {A32B6852-82C7-4107-8C68-AE9232289E09}
-		{4E161914-9839-4E11-9D4E-ED26C6833BED} = {B2A52533-7FBF-41FE-A0AF-874FC54300B2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6A61CB42-80C5-4A83-AC3E-DA41FC875525}
