@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Castle.Core;
 using Castle.MicroKernel.Registration;
 using CluedIn.Connector.Http.Connector;
 using CluedIn.Core;
@@ -151,7 +150,7 @@ namespace CluedIn.Connector.Http
             });
             #endregion
 
-            this.Log.LogInformation($"{ComponentName} Registered");
+            Log.LogInformation($"{ComponentName} Registered");
             State = ServiceState.Started;
         }
 

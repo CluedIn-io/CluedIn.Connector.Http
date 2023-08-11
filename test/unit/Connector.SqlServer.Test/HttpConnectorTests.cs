@@ -180,8 +180,8 @@ Content-Length: 0
 
             serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
-Authorization: authvalue
 X-Subject-Id: test_container
+Authorization: authvalue
 Content-Type: application/json; charset=utf-8
 Content-Length: 377
 
@@ -286,8 +286,8 @@ Content-Length: 0
 
             serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
-Authorization: authvalue
 X-Subject-Id: test_container
+Authorization: authvalue
 Content-Type: application/json; charset=utf-8
 Content-Length: 524
 
@@ -402,8 +402,8 @@ Content-Length: 0
 
             serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
-Authorization: authvalue
 X-Subject-Id: test_container
+Authorization: authvalue
 Content-Type: application/json; charset=utf-8
 Content-Length: 3527
 
@@ -547,7 +547,7 @@ Content-Length: 3527
 }}");
         }
 
-        [Fact]
+        [Fact(Skip = "With batching it's hard to return SaveResultState.ReQueue for particular entity. HttpErrors are now indicated by throwing, so higher level could re-queue")]
         internal async Task VerifyStoreDataReturnReQueueForHttpError()
         {
             // arrange

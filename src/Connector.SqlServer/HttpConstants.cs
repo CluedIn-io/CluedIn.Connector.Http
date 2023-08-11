@@ -35,6 +35,18 @@ namespace CluedIn.Connector.Http
         public const string Category = "Connectivity";
         public const string Details = "Supports publishing of data to external Http Post endpoints.";
 
+        public const string BatchingSupported = nameof(BatchingSupported);
+
+        /// <summary>
+        /// Environment key name for batch sync interval
+        /// </summary>
+        public static string BatchSyncIntervalKeyName => "Streams_HttpConnector_BatchSyncInterval";
+
+        /// <summary>
+        /// Environment key name for batch records threshold
+        /// </summary>
+        public static string BatchRecordsThresholdKeyName => "Streams_HttpConnector_BatchRecordsThreshold";
+
         public static AuthMethods AuthMethods = new AuthMethods
         {
             token = new Control[]
@@ -50,16 +62,18 @@ namespace CluedIn.Connector.Http
                 {
                     name = KeyName.Authorization,
                     displayName = "Authorization",
-                    type = "input",
-                    isRequired = false
+                    type = "input"
+                },
+                new Control
+                {
+                    name = BatchingSupported,
+                    displayName = BatchingSupported,
+                    type = "checkbox"
                 }
             }
         };
 
-        public static IEnumerable<Control> Properties = new List<Control>
-        {
-
-        };
+        public static IEnumerable<Control> Properties = new List<Control>();
 
         public static readonly ComponentEmailDetails ComponentEmailDetails = new ComponentEmailDetails {
             Features = new Dictionary<string, string>

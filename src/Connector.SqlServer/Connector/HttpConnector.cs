@@ -6,11 +6,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CluedIn.Connector.Http.Services;
+using CluedIn.Connectors.Batching;
+using CluedIn.Connectors.Batching.InMemory;
 using CluedIn.Core;
+using CluedIn.Core.Configuration;
 using CluedIn.Core.Connectors;
-using CluedIn.Core.Data.Relational;
 using CluedIn.Core.Processing;
 using CluedIn.Core.Streams.Models;
+using Newtonsoft.Json;
 using ExecutionContext = CluedIn.Core.ExecutionContext;
 
 namespace CluedIn.Connector.Http.Connector
@@ -20,12 +23,22 @@ namespace CluedIn.Connector.Http.Connector
         private readonly IHttpClient _client;
         private readonly IClock _clock;
         private readonly ICorrelationIdGenerator _correlationIdGenerator;
+        private readonly PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>> _buffer;
 
-        public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId)
+        public HttpConnector(IHttpClient client, IClock clock, ICorrelationIdGenerator correlationIdGenerator) : base(HttpConstants.ProviderId, false)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _correlationIdGenerator = correlationIdGenerator ?? throw new ArgumentNullException(nameof(correlationIdGenerator));
+
+            var batchRecordsThreshold = ConfigurationManagerEx.AppSettings.GetValue<int?>(HttpConstants.BatchRecordsThresholdKeyName, null);
+            var batchSyncInterval = ConfigurationManagerEx.AppSettings.GetValue<int?>(HttpConstants.BatchSyncIntervalKeyName, null);
+            _buffer = new PartitionedBuffer<HttpConnectorJobData, Dictionary<string, object>>(Flush, batchRecordsThreshold, batchSyncInterval);
+        }
+
+        ~HttpConnector()
+        {
+            _buffer.Dispose();
         }
 
         public override async Task CreateContainer(ExecutionContext executionContext, Guid connectorProviderDefinitionId, IReadOnlyCreateContainerModelV2 model)
@@ -40,7 +53,7 @@ namespace CluedIn.Connector.Http.Connector
 
         public override async Task ArchiveContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel)
         {
-            await Task.FromResult(0);
+            await _buffer.Flush();
         }
 
         public override async Task RenameContainer(ExecutionContext executionContext, IReadOnlyStreamModel streamModel, string oldContainerName)
@@ -126,6 +139,9 @@ namespace CluedIn.Connector.Http.Connector
             var providerDefinitionId = streamModel.ConnectorProviderDefinitionId!.Value;
             var containerName = streamModel.ContainerName;
 
+            var connection = await GetAuthenticationDetails(executionContext, providerDefinitionId);
+            var configuration = new HttpConnectorJobData(connection.Authentication.ToDictionary(x => x.Key, x => x.Value), containerName, providerDefinitionId);
+
             // matching output format of previous version of the connector
             var data = connectorEntityData.Properties.ToDictionary(x => x.Name, x => x.Value);
             data.Add("Id", connectorEntityData.EntityId);
@@ -174,7 +190,9 @@ namespace CluedIn.Connector.Http.Connector
                         };
             }
 
-            return await _client.SendAsync(config, providerDefinitionId, containerName, data);
+            await _buffer.Add(configuration, data);            
+
+            return SaveResult.Success;
         }
 
         public override Task<ConnectorLatestEntityPersistInfo> GetLatestEntityPersistInfo(ExecutionContext executionContext, IReadOnlyStreamModel streamModel, Guid entityId)
@@ -195,6 +213,14 @@ namespace CluedIn.Connector.Http.Connector
         public virtual async Task<IConnectorConnectionV2> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
         {
             return await AuthenticationDetailsHelper.GetAuthenticationDetails(executionContext, providerDefinitionId);
+        }
+
+        private void Flush(HttpConnectorJobData configuration, Dictionary<string, object>[] entitiesData)
+        {
+            if (entitiesData == null || entitiesData.Length == 0)
+                return;            
+
+            _client.SendAsync(configuration, entitiesData).GetAwaiter().GetResult();
         }
     }
 }

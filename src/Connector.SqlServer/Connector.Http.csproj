@@ -12,6 +12,7 @@
     <EmbeddedResource Include="Resources\HTTP_logo.svg" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CluedIn.Connectors.Batching" />
     <PackageReference Include="CluedIn.Core" />
     <PackageReference Include="CluedIn.Core.Agent" />
     <PackageReference Include="CluedIn.Crawling" />

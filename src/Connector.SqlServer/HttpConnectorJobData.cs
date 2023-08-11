@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using CluedIn.Core.Crawling;
 
@@ -5,27 +6,46 @@ namespace CluedIn.Connector.Http
 {
     public class HttpConnectorJobData : CrawlJobData
     {
-        public HttpConnectorJobData(IDictionary<string, object> configuration)
+        public HttpConnectorJobData(IDictionary<string, object> configuration, string containerName = null, Guid? providerDefinitionId = null)
         {
-            if (configuration == null)
-            {
-                return;
-            }
+            Configurations = configuration;
+            ContainerName = containerName;
+            ProviderDefinitionId = providerDefinitionId;
 
-            Authorization = GetValue<string>(configuration, HttpConstants.KeyName.Authorization);
-            Url = GetValue<string>(configuration, HttpConstants.KeyName.Url);
+            Authorization = Configurations.TryGetValue(HttpConstants.KeyName.Authorization, out var authConfig) ? authConfig.ToString() : null;
+            BatchingSupported = Configurations.TryGetValue(HttpConstants.BatchingSupported, out var batchingConfig) ? (bool)batchingConfig : false;
+            Url = Configurations.TryGetValue(HttpConstants.KeyName.Url, out var urlConfig) ? urlConfig.ToString() : null;
         }
 
         public IDictionary<string, object> ToDictionary()
         {
-            return new Dictionary<string, object> {
-                { HttpConstants.KeyName.Authorization, Authorization },
-                { HttpConstants.KeyName.Url, Url }
-            };
+            return Configurations;
         }
 
-        public string Authorization { get; set; }
+        public IDictionary<string, object> Configurations { get; }
+        public string Authorization { get; }
+        public bool BatchingSupported { get; }
+        public string ContainerName { get; }
+        public Guid? ProviderDefinitionId { get; }
+        public string Url { get; }
 
-        public string Url { get; set; }
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as HttpConnectorJobData);
+        }
+
+        public bool Equals(HttpConnectorJobData other)
+        {
+            return other != null &&
+                Authorization == other.Authorization &&
+                BatchingSupported == other.BatchingSupported &&
+                ContainerName == other.ContainerName &&
+                Url == other.Url;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Authorization, BatchingSupported, ContainerName, Url);
+        }
     }
 }
