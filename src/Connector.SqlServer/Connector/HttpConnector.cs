@@ -189,7 +189,7 @@ namespace CluedIn.Connector.Http.Connector
 
         public override IReadOnlyCollection<StreamMode> GetSupportedModes()
         {
-            return new List<StreamMode> { StreamMode.Sync, StreamMode.EventStream };
+            return new List<StreamMode> { StreamMode.EventStream };
         }
 
         public virtual async Task<IConnectorConnectionV2> GetAuthenticationDetails(ExecutionContext executionContext, Guid providerDefinitionId)
