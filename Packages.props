@@ -2,9 +2,9 @@
   <PropertyGroup Label="Dependency Versions">
     <_CacheCow>2.7.2</_CacheCow>
     <_EntityFramework>6.0.16</_EntityFramework>
-    <_ComponentHost>3.0.0</_ComponentHost>
+    <_ComponentHost>3.1.0</_ComponentHost>
     <_AutoFixture>4.11.0</_AutoFixture>
-    <_CluedIn>4.0.0-*</_CluedIn>
+    <_CluedIn>4.0.0</_CluedIn>
   </PropertyGroup>
   <ItemGroup>
     <!--
@@ -38,7 +38,7 @@
     <PackageReference Update="CluedIn.Core" Version="$(_CluedIn)" />
     <PackageReference Update="CluedIn.Core.Agent" Version="$(_CluedIn)" />
     <PackageReference Update="CluedIn.Crawling" Version="$(_CluedIn)" />
-    <PackageReference Update="CluedIn.CrawlerIntegrationTesting" Version="4.0.0-alpha.3" />
+    <PackageReference Update="CluedIn.CrawlerIntegrationTesting" Version="4.0.0" />
     <PackageReference Update="CluedIn.DataStore" Version="$(_CluedIn)" />
     <PackageReference Update="RestSharp" Version="106.10.1" />
     <PackageReference Update="Dapper" Version="2.0.138" />
