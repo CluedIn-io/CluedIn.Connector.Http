@@ -2,9 +2,9 @@
   <PropertyGroup Label="Dependency Versions">
     <_CacheCow>2.7.2</_CacheCow>
     <_EntityFramework>6.0.16</_EntityFramework>
-    <_ComponentHost>3.1.0</_ComponentHost>
+    <_ComponentHost>3.2.0</_ComponentHost>
     <_AutoFixture>4.11.0</_AutoFixture>
-    <_CluedIn>4.0.0</_CluedIn>
+    <_CluedIn>4.3.0-pr5652.128</_CluedIn>
   </PropertyGroup>
   <ItemGroup>
     <!--
@@ -12,10 +12,14 @@
 
         MUST SPECIFY IN CSPROJ AS <PackageReference Name="<depName>" />
     -->
+    <PackageReference Update="Azure.Identity" Version="1.6.0" />
+    <PackageReference Update="Azure.ResourceManager" Version="1.1.2" />
+    <PackageReference Update="Azure.ResourceManager.Resources" Version="1.1.0" />
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Update="AutoFixture.Xunit2" Version="$(_AutoFixture)" />
     <PackageReference Update="AutoFixture.Idioms" Version="$(_AutoFixture)" />
     <PackageReference Update="AutoFixture.AutoMoq" Version="$(_AutoFixture)" />
+    <PackageReference Update="CsvHelper" Version="15.0.0" />
     <PackageReference Update="coverlet.msbuild" Version="2.8.0" />
     <PackageReference Update="Serilog.Sinks.XUnit" Version="1.0.21" />
     <PackageReference Update="xunit" Version="2.4.1" />

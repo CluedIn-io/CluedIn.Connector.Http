@@ -25,11 +25,11 @@ namespace CluedIn.Connector.Http.Connector
             {
                 using var client = new HttpClient();
                 using var request = new HttpRequestMessage(HttpMethod.Post, (string)config.Authentication[HttpConstants.KeyName.Url]);
-                if (config.Authentication.ContainsKey(HttpConstants.KeyName.Authorization))
+                if (config.Authentication.TryGetValue(HttpConstants.KeyName.Authorization, out var authorization))
                 {
-                    if (!string.IsNullOrEmpty(config.Authentication[HttpConstants.KeyName.Authorization].ToString()?.Trim()))
+                    if (!string.IsNullOrEmpty(authorization?.ToString()?.Trim()))
                     {
-                        request.Headers.Add("Authorization", (string)config.Authentication[HttpConstants.KeyName.Authorization]);
+                        request.Headers.Add("Authorization", (string)authorization);
                     }
                 }
 

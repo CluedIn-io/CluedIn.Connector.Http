@@ -6,15 +6,21 @@
     <IsCluedInServerComponent>true</IsCluedInServerComponent>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="all.csv" />
     <None Remove="Resources\HTTP_logo.svg" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="all.csv" />
     <EmbeddedResource Include="Resources\HTTP_logo.svg" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="Azure.ResourceManager" />
+    <PackageReference Include="Azure.ResourceManager.Resources" />
     <PackageReference Include="CluedIn.Core" />
     <PackageReference Include="CluedIn.Core.Agent" />
     <PackageReference Include="CluedIn.Crawling" />
+    <PackageReference Include="CsvHelper" />
     <PackageReference Include="ComponentHost" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Dapper.SqlBuilder" />

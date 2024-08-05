@@ -52,20 +52,227 @@ namespace CluedIn.Connector.Http
                     displayName = "Authorization",
                     type = "input",
                     isRequired = false
-                }
+                },
+                new Control
+                {
+                    Name = "mykeyname",
+                    DisplayName = "My Key Name",
+                    Type = "dynamic",
+                    IsRequired = true,
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyExtendedConfigurationProvider.SourceName,
+                },
+                new Control
+                {
+                    Name = "country",
+                    DisplayName = "Country",
+                    Type = "option",
+                    IsRequired = true,
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyExtendedConfigurationProvider.SourceName,
+                },
+                new Control
+                {
+                    Name = "state",
+                    DisplayName = "State",
+                    Type = "option",
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyExtendedConfigurationProvider.SourceName,
+                    IsRequired = true,
+                    DataDependencies = new[]
+                    {
+                        new ControlDataDependency
+                        {
+                            Name = "country",
+                        }
+                    },
+                    DisplayDependencies = new[]
+                    {
+                        new ControlDisplayDependency
+                        {
+                            Name = "country",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                    },
+                },
+                new Control
+                {
+                    Name = "city",
+                    DisplayName = "City",
+                    Type = "option",
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyExtendedConfigurationProvider.SourceName,
+                    IsRequired = true,
+                    DataDependencies = new[]
+                    {
+                        new ControlDataDependency
+                        {
+                            Name = "country",
+                        },
+                        new ControlDataDependency
+                        {
+                            Name = "state",
+                        },
+                    },
+                    DisplayDependencies = new[]
+                    {
+                        new ControlDisplayDependency
+                        {
+                            Name = "country",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                        new ControlDisplayDependency
+                        {
+                            Name = "state",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                    },
+                },
+                new Control
+                {
+                    Name = "outputFormat2",
+                    DisplayName = "Output Format2",
+                    Type = "option",
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyExtendedConfigurationProvider.SourceName,
+                    IsRequired = true,
+                },
+                new Control
+                {
+                    Name = "delimiter2",
+                    DisplayName = "Delimiter2",
+                    Type = "input",
+                    IsRequired = true,
+                    DisplayDependencies = new[]
+                    {
+                        new ControlDisplayDependency
+                        {
+                            Name = "outputFormat2",
+                            Operator = ControlDependencyOperator.Equals,
+                            Value = "csv",
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Hidden,
+                        },
+                    },
+                },
+                new Control
+                {
+                    Name = "subscription",
+                    DisplayName = "Subscription",
+                    Type = "option",
+                    IsRequired = true,
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyAzureProvider.SourceName,
+                },
+                new Control
+                {
+                    Name = "resourceGroup",
+                    DisplayName = "Resource Group",
+                    Type = "option",
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyAzureProvider.SourceName,
+                    IsRequired = true,
+                    DataDependencies = new[]
+                    {
+                        new ControlDataDependency
+                        {
+                            Name = "subscription",
+                        }
+                    },
+                    DisplayDependencies = new[]
+                    {
+                        new ControlDisplayDependency
+                        {
+                            Name = "subscription",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                    },
+                },
+                new Control
+                {
+                    Name = "resource",
+                    DisplayName = "Resource",
+                    Type = "option",
+                    SourceType = ControlSourceType.Dynamic,
+                    Source = MyAzureProvider.SourceName,
+                    IsRequired = true,
+                    DataDependencies = new[]
+                    {
+                        new ControlDataDependency
+                        {
+                            Name = "subscription",
+                        },
+                        new ControlDataDependency
+                        {
+                            Name = "resourceGroup",
+                        },
+                    },
+                    DisplayDependencies = new[]
+                    {
+                        new ControlDisplayDependency
+                        {
+                            Name = "subscription",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                        new ControlDisplayDependency
+                        {
+                            Name = "resourceGroup",
+                            Operator = ControlDependencyOperator.Exists,
+                            Value = null,
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Disabled,
+                        },
+                    },
+                },
             }
         };
 
         public static IEnumerable<Control> Properties = new List<Control>
         {
-
+            new Control
+            {
+                Name = "outputFormat",
+                DisplayName = "Output Format",
+                Type = "option",
+                SourceType = ControlSourceType.Dynamic,
+                Source = MyExtendedConfigurationProvider.SourceName,
+                IsRequired = true,
+            },
+            new Control
+            {
+                Name = "delimiter",
+                DisplayName = "Delimiter",
+                Type = "input",
+                IsRequired = true,
+                DisplayDependencies = new[]
+                {
+                    new ControlDisplayDependency
+                    {
+                        Name = "outputFormat",
+                        Operator = ControlDependencyOperator.Equals,
+                        Value = "csv",
+                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Hidden,
+                    },
+                },
+            }
         };
 
         public static readonly ComponentEmailDetails ComponentEmailDetails = new ComponentEmailDetails {
             Features = new Dictionary<string, string>
             {
-                                       { "Connectivity",        "Expenses and Invoices against customers" }
-                                   },
+                {
+                    "Connectivity",
+                    "Expenses and Invoices against customers"
+                }
+            },
             Icon = ProviderIconFactory.CreateConnectorUri(ProviderId),
             ProviderName = ProviderName,
             ProviderId = ProviderId,
