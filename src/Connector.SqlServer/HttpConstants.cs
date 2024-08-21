@@ -37,7 +37,10 @@ namespace CluedIn.Connector.Http
 
         public static AuthMethods AuthMethods = new AuthMethods
         {
-            token = new Control[]
+            token = Bla
+        };
+
+        private static IEnumerable<Control> Bla = new Control[]
             {
                 new Control
                 {
@@ -232,38 +235,9 @@ namespace CluedIn.Connector.Http
                         },
                     },
                 },
-            }
-        };
+            };
 
-        public static IEnumerable<Control> Properties = new List<Control>
-        {
-            new Control
-            {
-                Name = "outputFormat",
-                DisplayName = "Output Format",
-                Type = "option",
-                SourceType = ControlSourceType.Dynamic,
-                Source = MyExtendedConfigurationProvider.SourceName,
-                IsRequired = true,
-            },
-            new Control
-            {
-                Name = "delimiter",
-                DisplayName = "Delimiter",
-                Type = "input",
-                IsRequired = true,
-                DisplayDependencies = new[]
-                {
-                    new ControlDisplayDependency
-                    {
-                        Name = "outputFormat",
-                        Operator = ControlDependencyOperator.Equals,
-                        Value = "csv",
-                            UnfulfilledAction = ControlDependencyUnfulfilledAction.Hidden,
-                    },
-                },
-            }
-        };
+        public static IEnumerable<Control> Properties = Bla;
 
         public static readonly ComponentEmailDetails ComponentEmailDetails = new ComponentEmailDetails {
             Features = new Dictionary<string, string>

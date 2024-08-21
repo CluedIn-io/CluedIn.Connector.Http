@@ -50,6 +50,24 @@ internal class MyExtendedConfigurationProvider : IExtendedConfigurationProvider
             };
         }
 
+        if (request.Key == "city")
+        {
+            var found = HandleCity().Data.SingleOrDefault(x => x.Value == request.Value);
+            return new ResolveOptionByValueResponse
+            {
+                Option = found
+            };
+        }
+
+        if (request.Key == "outputFormat2")
+        {
+            var found = HandleOutputFormat().Data.SingleOrDefault(x => x.Value == request.Value);
+            return new ResolveOptionByValueResponse
+            {
+                Option = found
+            };
+        }
+
         return new ResolveOptionByValueResponse
         {
             Option = null,
@@ -99,6 +117,16 @@ internal class MyExtendedConfigurationProvider : IExtendedConfigurationProvider
             return HandleState(request.CurrentValues);
         }
 
+        if (request.Key == "city")
+        {
+            return HandleCity();
+        }
+
+        return ResolveOptionsResponse.Empty;
+    }
+
+    private static ResolveOptionsResponse HandleCity()
+    {
         return new ResolveOptionsResponse
         {
             Data = Enumerable
