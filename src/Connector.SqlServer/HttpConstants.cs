@@ -37,21 +37,26 @@ namespace CluedIn.Connector.Http
 
         public static AuthMethods AuthMethods = new AuthMethods
         {
-            token = new Control[]
+            Token = new Control[]
             {
-                new Control
-                {
-                    name = KeyName.Url,
-                    displayName = "Url",
-                    type = "input",
-                    isRequired = true
+                new() {
+                    Name = KeyName.Url,
+                    DisplayName = "Url",
+                    Type = "input",
+                    IsRequired = true,
+                    ValidationRules = new List<Dictionary<string, string>>()
+                    {
+                        new() {
+                            { "regex", "\\s" },
+                            { "message", "Spaces are not allowed" }
+                        }
+                    },
                 },
-                new Control
-                {
-                    name = KeyName.Authorization,
-                    displayName = "Authorization",
-                    type = "input",
-                    isRequired = false
+                new() {
+                    Name = KeyName.Authorization,
+                    DisplayName = "Authorization",
+                    Type = "input",
+                    IsRequired = false,
                 }
             }
         };
