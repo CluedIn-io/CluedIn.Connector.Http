@@ -168,6 +168,7 @@ namespace CluedIn.Connector.Http.Connector
                 data = new Dictionary<string, object>
                         {
                             { "TimeStamp", _clock.Now },
+                            { "Epoch", _clock.Now.ToUnixTimeSeconds() },
                             { "VersionChangeType", connectorEntityData.ChangeType.ToString() },
                             { "CorrelationId", _correlationIdGenerator.Next() },
                             { "Data", data }
