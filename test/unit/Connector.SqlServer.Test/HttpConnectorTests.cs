@@ -289,10 +289,11 @@ Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
 Content-Type: application/json; charset=utf-8
-Content-Length: 524
+Content-Length: 548
 
 {{
   ""TimeStamp"": ""2023-04-25T19:18:23+10:00"",
+  ""Epoch"": 1682414303,
   ""VersionChangeType"": ""Added"",
   ""CorrelationId"": ""corroid"",
   ""Data"": {{
