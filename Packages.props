@@ -1,9 +1,10 @@
 <Project>
   <PropertyGroup Label="Dependency Versions">
     <_CacheCow>2.7.2</_CacheCow>
-    <_EntityFramework>10.0.7</_EntityFramework>
     <_AutoFixture>5.0.0-preview0012</_AutoFixture>
-    <_CluedIn>5.0.0-*</_CluedIn>
+    <!-- Guarded so the pipeline's -p:_CluedIn=<version> per build leg wins; Directory.Build.props
+         sets the same default/guard earlier for DefineConstants derivation. -->
+    <_CluedIn Condition="'$(_CluedIn)' == ''">5.0.0-*</_CluedIn>
   </PropertyGroup>
   <ItemGroup>
     <!--
@@ -11,17 +12,33 @@
 
         MUST SPECIFY IN CSPROJ AS <PackageReference Name="<depName>" />
     -->
+    <PackageReference Update="coverlet.msbuild" Version="2.8.0" />
+    <PackageReference Update="Moq" Version="4.13.1" />
+    <PackageReference Update="FluentAssertions" Version="6.11.0" />
+    <PackageReference Update="AutoFixture.Idioms" Version="4.18.0" />
+    <PackageReference Update="AutoFixture.AutoMoq" Version="4.18.0" />
+  </ItemGroup>
+  <!-- Below CluedIn 5.0.0 (net6.0): xunit v2 / AutoFixture.Xunit2 / EF Core 6 / older Test SDK -
+       the versions the 4.x release lines used for net6.0 before this repo's own tooling moved to
+       net10.0/xunit v3 on develop. The newer xunit.v3/Microsoft Testing Platform-based tooling and
+       EF Core 8+ do not support net6.0. -->
+  <ItemGroup Condition="$([MSBuild]::VersionLessThan('$(_CluedIn)', '5.0.0'))">
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Update="AutoFixture.Xunit2" Version="4.18.0" />
+    <PackageReference Update="xunit" Version="2.9.3" />
+    <PackageReference Update="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore" Version="6.0.16" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.16" />
+  </ItemGroup>
+  <!-- CluedIn 5.0.0+ (this repo's own local-dev default) - the current xunit.v3/Microsoft Testing
+       Platform-based tooling and EF Core 10. -->
+  <ItemGroup Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_CluedIn)', '5.0.0'))">
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageReference Update="AutoFixture.Xunit3" Version="$(_AutoFixture)" />
-    <PackageReference Update="AutoFixture.Idioms" Version="$(_AutoFixture)" />
-    <PackageReference Update="AutoFixture.AutoMoq" Version="$(_AutoFixture)" />
-    <PackageReference Update="coverlet.msbuild" Version="2.8.0" />
     <PackageReference Update="xunit.v3" Version="3.2.2" />
     <PackageReference Update="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageReference Update="Moq" Version="4.13.1" />
-    <PackageReference Update="Microsoft.EntityFrameworkCore" Version="$(_EntityFramework)" />
-    <PackageReference Update="Microsoft.EntityFrameworkCore.InMemory" Version="$(_EntityFramework)" />
-    <PackageReference Update="FluentAssertions" Version="6.11.0" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Update="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
   </ItemGroup>
   <ItemGroup>
     <!--
