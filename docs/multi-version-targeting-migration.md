@@ -63,25 +63,43 @@ custom `IHttpClient`/`HttpPostClient` wrapper over `System.Net.Http.HttpClient`,
 version-sensitive break across the targeted CluedIn generations) and no transitive dependency
 version break was found.
 
-## CI-only failure: platform-dependent test (found on first real CI run, PR build 151996)
+## CI-only failure: platform-dependent test (found on real CI, two attempts to fully root-cause)
 
-All three `Multi-version build+test` legs failed with 3/6 unit test failures — but this repo's
-`dotnet test` had passed clean locally beforehand. Root cause: `HttpConnectorTests.cs`
-(`VerifyStoreData`, `VerifyStoreEventData`, `VerifyStoreDataWithEdges`) asserts the exact raw HTTP
-request text a `TcpListener` receives against a verbatim interpolated string literal (`$@"POST /
-HTTP/1.1 ..."`) written directly in the source file. `HttpPostClient` always writes real `\r\n`
-line endings on the wire (correct per the HTTP spec), but the *literal's* line endings are whatever
-the source file itself was checked out with - `\r\n` on this Windows dev machine (git
-`core.autocrlf`), but LF-only on the Linux CI agent (switched from `windows-latest` as part of this
-migration, exposing the mismatch for the first time). Confirmed by reproducing locally: converting
-just this file to LF-only line endings and rerunning `dotnet test` reproduced the same 3 failures
-that CI hit, with zero other changes.
+All three `Multi-version build+test` legs failed with 3/6 unit test failures on the first real CI
+run (build 151996) — but this repo's `dotnet test` had passed clean locally beforehand.
+`HttpConnectorTests.cs` (`VerifyStoreData`, `VerifyStoreEventData`, `VerifyStoreDataWithEdges`)
+asserts the exact raw HTTP request text a `TcpListener` receives against a verbatim interpolated
+string literal (`$@"POST / HTTP/1.1 ..."`) written directly in the source file.
 
-Fixed by normalizing both sides of each comparison
-(`serverReceivedRequest.Replace("\r\n", "\n").Should().Be(expected.Replace("\r\n", "\n"))`) so the
-assertion checks request *content*, not incidental source-file line-ending style. Re-verified the
-LF-only repro now passes with the fix applied, then restored the file's normal CRLF and confirmed
-`dotnet test` still passes 6/6 on both net6.0 and net10.0.
+**First fix attempt (incomplete):** assumed the only issue was the literal's own line-ending style —
+`\r\n` on this Windows dev machine (git `core.autocrlf`), LF-only on the Linux CI agent (switched
+from `windows-latest` as part of this migration, exposing the mismatch for the first time). Fixed by
+normalizing both sides with `.Replace("\r\n", "\n")`. Reproduced by converting the file to LF-only
+locally and confirming `dotnet test` failed the same way, then confirming the fix made it pass — but
+that repro only exercised the *literal's* line endings; it could not exercise the second, deeper
+cause below, since that one depends on the OS the test actually *runs* on, not the file's checked-out
+line endings, and this machine is Windows either way. Pushed anyway, believing it fixed; **CI failed
+again identically (build 152005)**, same 3 tests, same 3/3 pass/fail split every leg.
+
+**Real root cause, found from the full CI log (not just the stack-trace tail):** the failure wasn't
+just the outer HTTP line breaks — the `Content-Length` header value itself differed (e.g. expected
+`377`, actual `366`, an 11-byte gap). `HttpPostClient.cs` serializes the body via
+`JsonConvert.SerializeObject(data, Formatting.Indented, ...)`. Newtonsoft.Json's `Formatting.Indented`
+writes its internal line breaks through `TextWriter.NewLine`, i.e. `Environment.NewLine` — so on
+Linux the JSON body itself is genuinely fewer *bytes* (LF) than on Windows (CRLF), and
+`Content-Length` correctly reflects that real difference. Normalizing line endings in the captured
+text doesn't fix this: the `Content-Length` value is already-computed digits, not newline characters,
+so a hardcoded `377` in the test literal will never match a genuinely-different real byte count on
+another platform.
+
+**Fix:** added a `NormalizeForComparison` helper that normalizes `\r\n`→`\n` *and* strips the numeric
+`Content-Length` value (regex `Content-Length: \d+` → `Content-Length: X`) before comparing, so the
+assertion verifies the header's presence/well-formedness and exact JSON body content, without being
+tied to a platform-specific byte count. Verified the fix's actual logic directly (not just by
+re-reasoning): a throwaway script fed the helper a synthetic Windows-CRLF string with
+`Content-Length: 377` and a synthetic Linux-LF string with `Content-Length: 366` for the same
+logical content, and confirmed both normalize to the same value. Re-ran `dotnet test` on Windows for
+both net6.0 and net10.0 — still 6/6 passing after the change.
 
 ---
 

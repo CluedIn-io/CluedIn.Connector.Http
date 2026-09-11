@@ -26,6 +26,28 @@ namespace CluedIn.Connector.Http.Unit.Tests
 {
     public class HttpConnectorTests
     {
+        // The wire text HttpPostClient writes always uses real CRLF for the HTTP header lines (per
+        // the HTTP spec), but two things about the raw captured text are platform-dependent rather
+        // than actual content:
+        //  1. The verbatim string literals used as "expected" below bake in whatever line-ending
+        //     style this source file itself was checked out with (CRLF on a Windows/autocrlf=true
+        //     checkout, LF-only on Linux).
+        //  2. HttpPostClient serializes the body via Newtonsoft.Json's Formatting.Indented, which
+        //     writes its internal line breaks through TextWriter.NewLine - i.e. Environment.NewLine
+        //     - so the JSON body itself (and therefore the Content-Length header, which reflects
+        //     its real byte count) is genuinely shorter on Linux (LF) than on Windows (CRLF), not
+        //     just differently-formatted. Confirmed directly against a real CI failure: expected
+        //     Content-Length: 377 (authored/computed under Windows CRLF), actual Content-Length: 366
+        //     on the Linux agent - an 11-byte gap matching the 11 internal newlines in that
+        //     particular JSON body.
+        // Normalizing line endings alone (replacing "\r\n" with "\n") fixes point 1 but not point 2,
+        // since the Content-Length value is already-computed digits, not newline characters. This
+        // additionally normalizes away the specific numeric Content-Length value so the assertion
+        // verifies the header is present and well-formed plus exact JSON body content, without
+        // being tied to a platform-specific byte count.
+        private static string NormalizeForComparison(string text) =>
+            System.Text.RegularExpressions.Regex.Replace(text.Replace("\r\n", "\n"), @"Content-Length: \d+", "Content-Length: X");
+
         [Theory]
         [InlineData("invalid_url")]
         public async Task VerifyConnectionValidationFailsForInvalidUrl(string url)
@@ -178,12 +200,7 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            // Normalize line endings before comparing: the wire text HttpPostClient writes is
-            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
-            // whatever line-ending style this source file itself was checked out with (CRLF on a
-            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
-            // assertion is platform-dependent rather than actually testing request content.
-            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
+            NormalizeForComparison(serverReceivedRequest).Should().Be(NormalizeForComparison($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -201,7 +218,7 @@ Content-Length: 377
     ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
   ],
   ""ChangeType"": ""Added""
-}}".Replace("\r\n", "\n"));
+}}"));
         }
 
         [Fact]
@@ -289,12 +306,7 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            // Normalize line endings before comparing: the wire text HttpPostClient writes is
-            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
-            // whatever line-ending style this source file itself was checked out with (CRLF on a
-            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
-            // assertion is platform-dependent rather than actually testing request content.
-            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
+            NormalizeForComparison(serverReceivedRequest).Should().Be(NormalizeForComparison($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -318,7 +330,7 @@ Content-Length: 548
     ],
     ""ChangeType"": ""Added""
   }}
-}}".Replace("\r\n", "\n"));
+}}"));
         }
 
         [Fact]
@@ -411,12 +423,7 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            // Normalize line endings before comparing: the wire text HttpPostClient writes is
-            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
-            // whatever line-ending style this source file itself was checked out with (CRLF on a
-            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
-            // assertion is platform-dependent rather than actually testing request content.
-            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
+            NormalizeForComparison(serverReceivedRequest).Should().Be(NormalizeForComparison($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -560,7 +567,7 @@ Content-Length: 3527
     }}
   ],
   ""ChangeType"": ""Added""
-}}".Replace("\r\n", "\n"));
+}}"));
         }
 
         [Fact]
