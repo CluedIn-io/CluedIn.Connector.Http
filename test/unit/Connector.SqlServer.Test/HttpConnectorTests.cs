@@ -178,7 +178,12 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
+            // Normalize line endings before comparing: the wire text HttpPostClient writes is
+            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
+            // whatever line-ending style this source file itself was checked out with (CRLF on a
+            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
+            // assertion is platform-dependent rather than actually testing request content.
+            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -196,7 +201,7 @@ Content-Length: 377
     ""/Person#Acceptance:7c5591cf-861a-4642-861d-3b02485854a0""
   ],
   ""ChangeType"": ""Added""
-}}");
+}}".Replace("\r\n", "\n"));
         }
 
         [Fact]
@@ -284,7 +289,12 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
+            // Normalize line endings before comparing: the wire text HttpPostClient writes is
+            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
+            // whatever line-ending style this source file itself was checked out with (CRLF on a
+            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
+            // assertion is platform-dependent rather than actually testing request content.
+            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -308,7 +318,7 @@ Content-Length: 548
     ],
     ""ChangeType"": ""Added""
   }}
-}}");
+}}".Replace("\r\n", "\n"));
         }
 
         [Fact]
@@ -401,7 +411,12 @@ Content-Length: 0
             // assert
             serverReceivedRequest.Should().NotBeNull();
 
-            serverReceivedRequest.Should().Be($@"POST / HTTP/1.1
+            // Normalize line endings before comparing: the wire text HttpPostClient writes is
+            // always CRLF per the HTTP spec, but the verbatim string literal below bakes in
+            // whatever line-ending style this source file itself was checked out with (CRLF on a
+            // Windows/autocrlf=true checkout, LF-only on Linux) - without normalizing, this
+            // assertion is platform-dependent rather than actually testing request content.
+            serverReceivedRequest.Replace("\r\n", "\n").Should().Be($@"POST / HTTP/1.1
 Host: {l.LocalEndpoint}
 Authorization: authvalue
 X-Subject-Id: test_container
@@ -545,7 +560,7 @@ Content-Length: 3527
     }}
   ],
   ""ChangeType"": ""Added""
-}}");
+}}".Replace("\r\n", "\n"));
         }
 
         [Fact]

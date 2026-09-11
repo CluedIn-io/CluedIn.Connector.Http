@@ -63,6 +63,26 @@ custom `IHttpClient`/`HttpPostClient` wrapper over `System.Net.Http.HttpClient`,
 version-sensitive break across the targeted CluedIn generations) and no transitive dependency
 version break was found.
 
+## CI-only failure: platform-dependent test (found on first real CI run, PR build 151996)
+
+All three `Multi-version build+test` legs failed with 3/6 unit test failures — but this repo's
+`dotnet test` had passed clean locally beforehand. Root cause: `HttpConnectorTests.cs`
+(`VerifyStoreData`, `VerifyStoreEventData`, `VerifyStoreDataWithEdges`) asserts the exact raw HTTP
+request text a `TcpListener` receives against a verbatim interpolated string literal (`$@"POST /
+HTTP/1.1 ..."`) written directly in the source file. `HttpPostClient` always writes real `\r\n`
+line endings on the wire (correct per the HTTP spec), but the *literal's* line endings are whatever
+the source file itself was checked out with - `\r\n` on this Windows dev machine (git
+`core.autocrlf`), but LF-only on the Linux CI agent (switched from `windows-latest` as part of this
+migration, exposing the mismatch for the first time). Confirmed by reproducing locally: converting
+just this file to LF-only line endings and rerunning `dotnet test` reproduced the same 3 failures
+that CI hit, with zero other changes.
+
+Fixed by normalizing both sides of each comparison
+(`serverReceivedRequest.Replace("\r\n", "\n").Should().Be(expected.Replace("\r\n", "\n"))`) so the
+assertion checks request *content*, not incidental source-file line-ending style. Re-verified the
+LF-only repro now passes with the fix applied, then restored the file's normal CRLF and confirmed
+`dotnet test` still passes 6/6 on both net6.0 and net10.0.
+
 ---
 
 ## Checklist
@@ -73,5 +93,6 @@ version break was found.
 - [x] `NuGet.config` — renamed from `Nuget.config`
 - [x] Test csproj — conditional xunit v2/v3 + AutoFixture selection; real `dotnet test` passes on both TFMs
 - [x] Source — audited; 0 errors on all three legs, no `#if` guards needed
+- [x] Fixed a platform-dependent test (`HttpConnectorTests.cs`, 3 assertions) found only by real CI on the Linux agent — see above
 - [x] `GitVersion.yml` — `next-version: 1.0`; `ignore.commits-before: 2025-05-24T00:00:00`; verified `MajorMinorPatch: "1.0.0"` with the pinned GitVersion.Tool 5.9.0
-- [ ] Push branch and confirm the actual Azure DevOps pipeline run is green end-to-end
+- [ ] Push branch and confirm the actual Azure DevOps pipeline run is green end-to-end (first run failed on the platform-dependent test above; re-verifying after the fix)
