@@ -111,6 +111,6 @@ both net6.0 and net10.0 — still 6/6 passing after the change.
 - [x] `NuGet.config` — renamed from `Nuget.config`
 - [x] Test csproj — conditional xunit v2/v3 + AutoFixture selection; real `dotnet test` passes on both TFMs
 - [x] Source — audited; 0 errors on all three legs, no `#if` guards needed
-- [x] Fixed a platform-dependent test (`HttpConnectorTests.cs`, 3 assertions) found only by real CI on the Linux agent — see above
+- [x] Fixed a platform-dependent test (`HttpConnectorTests.cs`, 3 assertions) found only by real CI on the Linux agent — took two attempts to fully root-cause, see above
 - [x] `GitVersion.yml` — `next-version: 1.0`; `ignore.commits-before: 2025-05-24T00:00:00`; verified `MajorMinorPatch: "1.0.0"` with the pinned GitVersion.Tool 5.9.0
-- [ ] Push branch and confirm the actual Azure DevOps pipeline run is green end-to-end (first run failed on the platform-dependent test above; re-verifying after the fix)
+- [x] Pushed branch and confirmed the Azure DevOps pipeline is green end-to-end — PR #41, build 152006: all three legs (4.7.0/4.8.0/5.0.0-beta.*) + `Multi-version: publish` passed
